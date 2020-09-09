@@ -24,8 +24,17 @@ from sklearn.preprocessing import MultiLabelBinarizer
 import matplotlib.gridspec as gridspec
 from permuation_herbs import Result_distance, roc_cal, prc_cal
 from example.casestudy2 import ingre_target_network
+from matplotlib.pyplot import figure, draw
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+def stylize_axes(ax):
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    ax.xaxis.set_tick_params(top='off', direction='out', width=1)
+    ax.yaxis.set_tick_params(right='off', direction='out', width=1)
 
 
 def flatten_list_yin(df, col):
@@ -103,10 +112,11 @@ def plot_herb_histom(fangji: classmethod, number_herb, out_type):
     frequency_top = [h[1] for h in fangji.herb_frequency_dict.most_common(number_herb)]
     if out_type in ['save_figure', 'plot_figure']:
 
-        fig, ax = plt.subplots(figsize=(12, 9))
-        sns.barplot(herb_top, frequency_top)
+        plt.subplots(figsize=(12, 9))
+        ax1 = sns.barplot(herb_top, frequency_top)
         plt.title('Number of herb formulae'.format(number_herb, fontsize=20))
         plt.ylabel('Frequency of herbs')
+        ax1.set_xticklabels(ax1.get_xticklabels(), rotation=45)
         plt.tight_layout()
         if out_type == 'save_figure':
             plt.savefig('figure/bar_herb_top{}'.format(number_herb))
@@ -203,8 +213,9 @@ def huangqi_gancao(herb_info, herb_obj, max_ingre, cor_matrix ):
 
 def plot_figure_2(fangji: classmethod, number_herb, out_type):
     # constrained_layout=True
-    fig3 = plt.figure(figsize=(12, 12))
-    sns.set_context("paper", font_scale=1.15)
+    fig3 = plt.figure(figsize=(8, 8))
+    sns.set_context("paper", font_scale=1.2)
+
     gs = gridspec.GridSpec(5, 5)
     # top herb cor frequency
     f3_ax1 = fig3.add_subplot(gs[1:, 1:])
@@ -222,7 +233,7 @@ def plot_figure_2(fangji: classmethod, number_herb, out_type):
                 cmap=cmap,
             square=True,
                 cbar_kws=dict(use_gridspec=False,
-                              shrink=.6,
+                              shrink=.7,
                               location='right'),
                 cbar=True,
                 fmt="d")
@@ -233,25 +244,28 @@ def plot_figure_2(fangji: classmethod, number_herb, out_type):
     sns.barplot(herb_top, frequency_top)
     # for i in zip(herb_top, frequency_top):
     #     f3_ax2.text(i[0], i[1], i[1], color='black', ha="center")
-
+    f3_ax2.set_xticklabels(f3_ax2.get_xticklabels(), rotation=45)
     f3_ax2.set_title('Number of herb formulae'.format(number_herb))
-    #f3_ax2.margins(x=0.01, y=0.01)
+
     # herb quique combined
     f3_ax3 = fig3.add_subplot(gs[1:, 0])  # herb quique combined
 
     herb_top, herb_uni_combine = plot_herb_combined(fangji, number_herb, 'only_data')
     sns.barplot(herb_uni_combine, herb_top)
 
-    f3_ax3.set_title('Number of coexistent herbs'.format(number_herb), y=-0.1)
+    f3_ax3.set_title('Number of coexistent herbs'.format(number_herb), y=-0.1, fontsize = 12)
     #f3_ax3.margins(x=0.01, y=0.01)
     plt.tight_layout()
+    # need change by plot out , change right , left , space
     if out_type == 'save_figure':
-        plt.savefig('figure/Figure 2'.format(number_herb),  transparent=True)
+        plt.savefig('figure/Figure 2.png'.format(number_herb), dpi = 300)
+        plt.savefig('figure/Figure 2.pdf', format = 'pdf')
     elif out_type == 'plot_figure':
         plt.show()
 
 
 # plot fangji distribution
+
 def plot_S1_fangji_length(fangji, out_type):
     fang_len = dict(Counter([len(v) for k, v in fangji.fangji_herb_dict.items()]))
     x_1 = [str(k) for k in list(fang_len.keys())]
@@ -262,26 +276,33 @@ def plot_S1_fangji_length(fangji, out_type):
     herb_mean = np.mean([len(v) for k, v in fangji.fangji_herbid_dict.items()])
     fang_len_dict = {k:len(v) for k, v in fangji.fangji_herb_dict.items()}
     # max_fangji =  max(fang_len_dict.items(), key=operator.itemgetter(1))[0]
-    fig, ax1 = plt.subplots(figsize=(10, 10))
-    sns.set_context("paper", font_scale=1)
-    plt.xlabel('Number of herbs', fontsize = 12)
+    sns.set_style("white")
+    fig, ax1 = plt.subplots(figsize=(8, 6))
+    sns.set_context("paper", font_scale=1.2)
+    plt.xlabel('Number of herbs')
     ax1.set_ylabel('Count of TCM formulae',
-                   color="red",
-                   fontsize =12)
+                   color="black")
     ax1 = sns.barplot(x_1, y_1, order=x_1)
+    for label in ax1.get_xticklabels():
+        label.set_visible(False)
+    for label in ax1.get_xticklabels()[::5]:
+        label.set_visible(True)
     ax1.tick_params(axis='y')
     ax2 = ax1.twinx()
     ax2.set_ylabel('Percentage %',
-                   color="blue",
-                   fontsize=12)
+                   color="black")
     ax2= sns.lineplot(x_1,
              y_2,
-             color="blue", marker="o",sort=False
+             color="black",
+                      marker="o",
+                      lw=0.5,markersize=6,
+                      sort=False
              )
 
     #plt.title('The number of herb in one prescription', fontsize=20)
     if out_type == 'save_figure':
-        plt.savefig('figure/Figure S1.png',  transparent=True)
+        plt.savefig('figure/Figure S1.pdf',   format = 'pdf')
+        plt.savefig('figure/Figure S1.png', dpi=300)
     elif out_type == 'plot_figure':
         plt.show()
 
@@ -293,10 +314,11 @@ def plot_S2_fangi_frequency(fangji, values_200_pd, out_type):
                                                        'herb2_name',
                                                        'frequency'], keep='first')['frequency']
     values = list(dict(fangji.herb_pair_frequency_dict).values())
-    figS2 = plt.figure(figsize=(10, 10))
-    sns.set_context("paper", font_scale=1)
+    figS2 = plt.figure(figsize=(8, 6))
+    sns.set_context("paper", font_scale=1.2)
     gs = gridspec.GridSpec(2, 2)
     # top herb cor frequency
+    sns.set_style("white")
     f3_ax1 = figS2.add_subplot(gs[0:, 0:])
     plt.hist(values,
                   log=True,
@@ -311,15 +333,15 @@ def plot_S2_fangi_frequency(fangji, values_200_pd, out_type):
              markersize=3,
              color = 'black')
 
-    # plt.plot([256,512,1024], [906,338,121],
-    #          linestyle = '--',
-    #          marker = 'o',
-    #          markersize=3,
-    #          color = 'black')
     plt.xscale('log')
     plt.xlabel('Frequency')
     plt.ylabel('Number of herb pair')
-    plt.box(on=None)
+    f3_ax1.spines['top'].set_visible(False)
+    f3_ax1.spines['right'].set_visible(False)
+
+    f3_ax1.xaxis.set_tick_params(top='off', direction='out', width=1)
+    f3_ax1.yaxis.set_tick_params(right='off', direction='out', width=1)
+
     f3_ax2 = figS2.add_subplot(gs[0:1, 1:])
     plt.hist(values_200,
              bins=10,
@@ -328,17 +350,22 @@ def plot_S2_fangi_frequency(fangji, values_200_pd, out_type):
              alpha=0.8,
              rwidth=0.90
              )
-
+    f3_ax2.spines['top'].set_visible(False)
+    f3_ax2.spines['right'].set_visible(False)
+    f3_ax2.xaxis.set_tick_params(top='off', direction='out', width=1)
+    f3_ax2.yaxis.set_tick_params(right='off', direction='out', width=1)
     plt.xlabel('Frequency')
     plt.ylabel('Number of herb pairs')
     plt.tight_layout()
+
     if out_type == 'save_figure':
-        plt.savefig('figure/Figure S2.png')
+        plt.savefig('figure/Figure S2.pdf', format='pdf')
+        plt.savefig('figure/Figure S2.png', dpi=300)
     elif out_type == 'plot_figure':
         plt.show()
 
 # ingredients oberlap
-def plot_S4_ingredient_overlap( top_pd, random_pd, herb_obj: classmethod, out_type):
+def plot_S3_ingredient_overlap( top_pd, random_pd, herb_obj: classmethod, out_type):
     pairs_random = list(set(list(zip(random_pd['herb1'],random_pd['herb2']))))
     top_pd = top_pd.sort_values(by='frequency', ascending=False)
     pairs_top = list(set(list(zip(top_pd['herb1'],top_pd['herb2']))))
@@ -349,9 +376,10 @@ def plot_S4_ingredient_overlap( top_pd, random_pd, herb_obj: classmethod, out_ty
     #print(show_detail_one_pair(herb_info, herb_obj, max_ingre[0]))
     #logger.info('the max overlap {}',  max_ingre)
     #logger.info('the number of ingredients overlap {} between {}', overlap_count_top, over_list_dict_top)
-    figS2 = plt.figure(figsize=(10, 10))
+    figS2 = plt.figure(figsize=(8, 8))
     gs = gridspec.GridSpec(2, 1)
-    sns.set_context("paper", font_scale=1)
+    sns.set_style("white")
+    sns.set_context("paper", font_scale=1.2)
     # top herb cor frequency
     f3_ax1 = figS2.add_subplot(gs[0:1, :])
     top_dict = dict(Counter(list(over_list_dict_top.values())))
@@ -392,7 +420,8 @@ def plot_S4_ingredient_overlap( top_pd, random_pd, herb_obj: classmethod, out_ty
     plt.ylabel('Percentage %')
     plt.xlabel('Number of common ingredients')
     if out_type == 'save_figure':
-        plt.savefig('figure/Figure S4.png')
+        plt.savefig('figure/Figure S3.png', dpi = 300)
+        plt.savefig('figure/Figure S3.pdf', format='pdf')
     elif out_type == 'plot_figure':
         plt.show()
 
@@ -421,6 +450,43 @@ def plot_fig_3(mean_pd, out_type):
         plt.savefig('figure/Figure 3.png')
     elif out_type == 'plot_figure':
         plt.show()
+
+def new_figue_3(out_type):
+    filename_top = 'result/top_200.csv'
+    filename_random = 'result/result_random_0_10000.csv'
+    result = Result_distance(filename_top, filename_random)  # 47 time
+    file_folder = 'top_random_new'
+    result.get_mean()
+
+    fig = plt.figure(figsize=(10, 8))
+    pd_melt = result.pd_melt
+    pd_melt = pd_melt.rename(columns={'Herb-level distance type':'H','Ingredient-level distance type':'I','class':'group'})
+    sns.set_context('paper', font_scale=2)
+    sns.set_style('white')
+    g = sns.FacetGrid(pd_melt,
+                      row='H',
+                      col= 'I',
+                      hue_kws={"alpha": [0.25, 0.25]},
+                      margin_titles = True,
+                      palette="Set2",
+                      despine = False)
+    g = g.map(sns.violinplot,
+                      'group',
+              "Distance",
+              palette="Set2")
+    g.add_legend()
+    plt.tight_layout()
+    if out_type == 'save_figure':
+        plt.savefig('figure/Figure 3.png', dpi = 300)
+        plt.savefig('figure/Figure 3.pdf', format='pdf')
+    elif out_type == 'plot_figure':
+        plt.show()
+
+    if out_type == 'save':
+        plt.savefig('result/{}/density.png'.format(file_folder))
+    elif out_type == 'show':
+        plt.show()
+
 
 def plot_fig_S5( mean_pd, out_type):
     mean_pd['distance_reduce'] = mean_pd['Distance for random herb pairs'] - mean_pd['Distance for top herb pairs']

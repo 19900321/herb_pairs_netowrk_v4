@@ -147,7 +147,7 @@ figures_draw.plot_figure_4(filename_top,
 # Step 7. plot the common ingredient, figure S3
 random_pd = pd.read_csv('result/result_random_0_10000.csv')
 top_pd = pd.read_csv('result/top_200.csv')
-figures_draw.plot_S4_ingredient_overlap(top_pd, random_pd, herb_obj, 'save_figure')
+figures_draw.plot_S3_ingredient_overlap(top_pd, random_pd, herb_obj, 'save_figure')
 
 # step 8. keep herbs with no overlap
 top_pd = pd.read_csv('result/top_200.csv')

@@ -355,6 +355,27 @@ class Result_distance:
         elif how == 'show':
             plt.show()
 
+    def prepare_raw_result(self):
+        new_grouped_list = self.new_grouped_list[['roc', 'prc', 'p-value_one']].reset_index()
+        zip_r = list(zip(new_grouped_list['roc'], new_grouped_list['prc'], new_grouped_list['p-value_one']))
+        extend_r_list = []
+        for i in list(range(len(zip_r))):
+            method = list(
+                new_grouped_list.iloc[i, :][['Herb-level distance type', 'Ingredient-level distance type']])
+            n = len(zip_r[i][0])
+            methods_1 = [method[0]] * n
+            methods_2 = [method[1]] * n
+            extend_r = list(zip(methods_1, methods_2, *zip_r[i]))
+            extend_r_list += extend_r
+
+        extend_raw_result = pd.DataFrame(extend_r_list,
+                                         columns=['Herb-level distance type',
+                                                  'Ingredient-level distance type',
+                                                  'AUROC',
+                                                  'AUPRC',
+                                                  'p-value_one'])
+        return extend_raw_result
+
     def save_analysis(self, file_folder, forbid_include=True):
         self.get_mean()
         import scipy
@@ -371,6 +392,9 @@ class Result_distance:
         self.get_auc()
         self.get_prc()
         self.pd_mean.reset_index().to_csv('result/{}/Table 1.csv'.format(file_folder))
+
+        new_grouped_list = self.prepare_raw_result()
+        new_grouped_list.to_csv('result/{}/all_records.csv'.format(file_folder))
         #self.get_permu_p_value(10000, repeat_time)  # change smaller one as example
         #self.pre_plot_data_p_value()
         #self.plot_p_value('save', file_folder)

@@ -4,14 +4,13 @@ from itertools import combinations
 import pandas as pd
 from proximity_key import *
 from generate_objects import *
-from generate_objects import *
 from disease import *
 from permuation_herbs import *
 import matplotlib.pyplot as plt
 import networkx as nx
 from process.drug_annotation_pipline import get_symble_from_entries
 g_obj.get_degree_binning(1001)
-
+from herb_ingre_tar import annotaion_herbs_from_mqsql, annotaion_ingredients_from_mqsql
 
 # use herb:center, ingre:closest as final distance, 6.25
 class Herb_Pair_network:
@@ -60,16 +59,24 @@ class Herb_Pair_network:
                                                orient='index').stack().reset_index()
         pd_herb_ingre.columns = ['node_from', 'index_add', 'node_to']
         pd_herb_ingre = pd_herb_ingre.drop(['index_add'], axis=1)
-        pd_herb_ingre['node_from_name'] = pd_herb_ingre['node_from'].apply(self.name_trans_herb)
-        pd_herb_ingre['node_to_name'] = pd_herb_ingre['node_to'].apply(self.name_find)
-
+        pd_herb_ingre = pd_herb_ingre.rename(columns={'node_from':'herb_id', 'node_to':'ingredient_id'})
+        pd_herb_ingre['herb_name'] = pd_herb_ingre['herb_id'].apply(self.name_trans_herb)
+        pd_herb_ingre['ingredient_name'] = pd_herb_ingre['ingredient_id'].apply(self.name_find)
+        pd_ingre_anno = annotaion_ingredients_from_mqsql()
+        pd_ingre_anno['Ingredient id'] = pd_ingre_anno['Ingredient id'].apply(lambda x:'I'+str(x))
+        pd_herb_ingre = pd.merge(pd_herb_ingre,
+                                 pd_ingre_anno,
+                                 left_on='ingredient_id',
+                                 right_on='Ingredient id')
         return pd_herb_ingre
+
 
     def get_center_ingredients(self):
         ingredients_from = get_center_one(self.ingre_distance_dict_list[2].keys(), self.ingre_distance_dict_list[2])
         ingredients_to = get_center_one(self.ingre_distance_dict_list[3].keys(), self.ingre_distance_dict_list[3])
         return {self.herb_from_name: {ingre: self.name_find(ingre) for ingre in ingredients_from},
                 self.herb_to_name: {ingre: self.name_find(ingre) for ingre in ingredients_to}}
+
 
     def get_disease_herb_ingre_z(self, disease_obj, disease, herb, distance_method, herb_ingre_dict, ingre_tar_dict,
                                  random_time, seed):
@@ -82,7 +89,6 @@ class Herb_Pair_network:
         ingre_disease_pd['herb_id'] = herb
         ingre_disease_pd['ingre_id'] = ingre_disease_pd.index
         ingre_disease_pd['ingre_name'] = ingre_disease_pd['ingre_id'].apply(self.name_find)
-
         return ingre_disease_dict, ingre_disease_pd
 
 
@@ -139,6 +145,7 @@ def prepare_center_distance_list_2(center_dict, mean_pd_top):
     center_pd = center_pd.round(decimals=2)
     return pre_pd, center_pd
 
+
 # prepare cytoscape
 def ingre_target_network(ingre_1_list, ingre_2_list, g_obj, ingredients_obj, how):
     ingre_name_1 = ';'.join([ingredients_obj.ingre_id_name_dict_value[ingre_1] for ingre_1 in ingre_1_list])
@@ -158,7 +165,7 @@ def ingre_target_network(ingre_1_list, ingre_2_list, g_obj, ingredients_obj, how
         t_all += nodes_related
 
     t_all = list(set(t_all))
-    g_sub_focus =  nx.Graph(g_obj.G.subgraph(t_all))
+    g_sub_focus = nx.Graph(g_obj.G.subgraph(t_all))
 
     # add ingre-target
     edge_1 = [(ingre_1, i) for i in list(ingredients_obj.ingre_tar_dict[ingre_1]) for ingre_1 in ingre_1_list ]
@@ -172,7 +179,8 @@ def ingre_target_network(ingre_1_list, ingre_2_list, g_obj, ingredients_obj, how
     node_label = {t:get_symble_from_entries(t[1:]) if t not in ingre_list else ingredients_obj.ingre_id_name_dict_value[t] for t in g_sub_focus.nodes }
     print(node_label.values())
 
-    # genrate node color dict by group
+
+    # generate node color dict by group
     node_color_dict = defaultdict()
     for t in g_sub_focus.nodes:
         if t in t1 and t not in t2:
@@ -210,10 +218,54 @@ def ingre_target_network(ingre_1_list, ingre_2_list, g_obj, ingredients_obj, how
         plt.show()
     return H
 
+
 def plot_center_network(center_dict, method, g_obj, ingredients_obj, how):
     ingre_1_list = list(center_dict[method]['GAN CAO'].keys())
     ingre_2_list = list(center_dict[method]['HUANG QI'].keys())
     ingre_target_network(ingre_1_list, ingre_2_list, g_obj, ingredients_obj, how)
+
+
+def prepare_table_s5(herb_pair_ingre):
+    herb_anno = annotaion_herbs_from_mqsql()
+    herb_anno .columns = ['TCMID herb ' + c for c in herb_anno.columns]
+    col_replace = {
+        'herb_name': 'TCMID herb pinyin name',
+        'ingredient_name': 'TCMID ingredient_name',
+        'Ingredient Website': 'TCMID Ingredient Website',
+        'ingredient_id_x': 'TCMID ingredient id',
+        'cid': 'PubChem id',
+        'name': 'Stitch name'
+    }
+    herb_pair_ingre = herb_pair_ingre.rename(columns = col_replace)
+    selected_columns = [
+        'TCMID herb pinyin name',
+        'TCMID ingredient_name',
+        'TCMID ingredient id',
+        'TCMID Ingredient Website',
+        'PubChem id',
+        'PubChem ID website',
+        'Pubchem_inchikey',
+        'Pubchem_iupac',
+        'Pubchem_molecular_formula',
+        'Pubchem_smiles',
+        'Stitch_cid_m',
+        'Stitch_cid_s',
+        'Stitch name'
+    ]
+    herb_pair_ingre = herb_pair_ingre[selected_columns]
+    herb_pair_ingre = pd.merge(herb_anno,
+             herb_pair_ingre,
+             left_on='TCMID herb Pinyin Name',
+             right_on='TCMID herb pinyin name',
+             how='right')
+    herb_pair_ingre['TCMID Ingredient Website'] = herb_pair_ingre['TCMID Ingredient Website'].apply(lambda x:x.replace('http://www.megabionet.org/',
+                                                                                                                  'http://119.3.41.228:8000/'))
+    herb_pair_ingre['TCMID herb website'] = herb_pair_ingre['TCMID herb website'].apply(lambda x:x.replace(
+        'http://www.megabionet.org/',
+        'http://119.3.41.228:8000/'))
+    herb_pair_ingre = herb_pair_ingre.drop(columns=['TCMID herb pinyin name'])
+    herb_pair_ingre = herb_pair_ingre.rename(columns={'TCMID herb herb-id':'TCMID herb id'})
+    return herb_pair_ingre
 
 
 def main():
@@ -223,17 +275,28 @@ def main():
     # pairs = g_obj.get_random_equivalents_set(['T441531','T2537'], 100, 45)
     # huang_gan_network = Herb_Pair_network(herb_distance_obj, 'HUANG QI', 'GAN CAO', 'shortest', 'center', herb_info)
     # huang_gan_network.pd_ingre_pairs_dis.to_csv('result/huangqitang/ingre_pairs_dis.csv')
-    #
+    # herb_pair_ingre = huang_gan_network_closest.pd_herb_ingre
+
+    # table_S5 = prepare_table_s5(herb_pair_ingre)
+    # table_S5.to_csv('result/huangqitang/herb_ingre_pairs.txt', spe= '\t)
+    # table_S5.to_csv('result/Table_S5.txt', spe='\t)
+    # table_S5.to_csv('table/Table_S5.txt', spe='\t)
+
     # huang_gan_network_closest = Herb_Pair_network(herb_distance_obj, 'HUANG QI', 'GAN CAO', 'closest', 'center',
     #                                              herb_info)
+
     # huang_gan_network_closest.pd_ingre_pairs_dis.to_csv('result/huangqitang/ingre_pairs_closest.csv')
+
     # method_list = ['closest', 'shortest', 'center', 'separation', 'kernel']
     # dis_pd_all, center_dict = get_ingre_dis(herb_distance_obj, herb_info, method_list)
     # mean_pd_top = pd.read_csv('result/top_random/mean.csv')
+
     # # pre_pd, center_pd = prepare_center_distance_list_2(center_dict, mean_pd_top)
     # # center_pd.to_csv('result/huangqi/center_records.csv')
+
     # pre_pd_back = prepare_center_distance_list(center_dict)
     # pre_pd_back.to_csv('result/huangqi/center_records_back.csv')
+
     # plot
     ingre_1 = ['I23134']
     ingre_2 = ['I13091']

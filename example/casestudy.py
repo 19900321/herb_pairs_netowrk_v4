@@ -58,3 +58,4 @@ result_recom_random = Result_distance(filename_top, filename_random)
 set_path = 'result/recom_random/'
 result_recom_random.save_analysis(0, 268, 35, set_path, forbid_include=False)
 
+

@@ -25,8 +25,9 @@ import matplotlib.gridspec as gridspec
 from permuation_herbs import Result_distance, roc_cal, prc_cal
 from example.casestudy2 import ingre_target_network
 from matplotlib.pyplot import figure, draw
+from matplotlib import pyplot
 from pathlib import Path
-
+from herb_ingre_tar import annotaion_herbs_from_mqsql
 logger = logging.getLogger(__name__)
 
 def stylize_axes(ax):
@@ -75,6 +76,12 @@ def plot_box_p_auc_sea(p_value_auc_new_3):
         plt.legend(loc='upper left', ncol=3)
         plt.savefig('five_methods/{}_filter_sea.png'.format(col_value))
 
+def transfer_pinyin_latin(herbs):
+    herb_pd = annotaion_herbs_from_mqsql()
+    herb_latin_pinyin = dict(zip(herb_pd['Pinyin Name'], herb_pd['Latin Name']))
+    herb_latin_pinyin.update({'CHUAN QIONG':herb_latin_pinyin['CHUAN XIONG']})
+    herb_top_dict = {h:herb_latin_pinyin[h].split('[')[0].strip() for h in herbs if h in herb_latin_pinyin and herb_latin_pinyin[h] != None}
+    return herb_top_dict
 
 # figure 2, top 10 frequency herbs
 def plot_cor_top_herb(fangji: classmethod, number_herb, out_type):
@@ -91,6 +98,11 @@ def plot_cor_top_herb(fangji: classmethod, number_herb, out_type):
     for k, v in kept_herbpair.items():
         pdfre.loc[k[0], k[1]] = v
         pdfre.loc[k[1], k[0]] = v
+
+    # herb_top_latine_name_dict = transfer_pinyin_latin(herb_top)
+    # pdfre = pdfre.rename(columns=herb_top_latine_name_dict)
+    # pdfre = pdfre.rename(index=herb_top_latine_name_dict)
+
 
     pdfre = pdfre.fillna(0)
     if out_type in ['save_figure', 'plot_figure']:
@@ -110,13 +122,15 @@ def plot_cor_top_herb(fangji: classmethod, number_herb, out_type):
 def plot_herb_histom(fangji: classmethod, number_herb, out_type):
     herb_top = [h[0][0] for h in fangji.herb_frequency_dict.most_common(number_herb)]
     frequency_top = [h[1] for h in fangji.herb_frequency_dict.most_common(number_herb)]
+    # herb_top_latine_name_dict = transfer_pinyin_latin(herb_top)
+    # herb_top= [herb_top_latine_name_dict[h] for h in herb_top]
     if out_type in ['save_figure', 'plot_figure']:
 
         plt.subplots(figsize=(12, 9))
         ax1 = sns.barplot(herb_top, frequency_top)
         plt.title('Number of herb formulae'.format(number_herb, fontsize=20))
         plt.ylabel('Frequency of herbs')
-        ax1.set_xticklabels(ax1.get_xticklabels(), rotation=45)
+        ax1.set_xticklabels(ax1.get_xticklabels(), rotation=90)
         plt.tight_layout()
         if out_type == 'save_figure':
             plt.savefig('figure/bar_herb_top{}'.format(number_herb))
@@ -134,6 +148,8 @@ def plot_herb_combined(fangji: classmethod, number_herb, out_type):
     herb_count = dict(Counter(herb_pair_merge))
 
     herb_uni_combine = [herb_count[h] for h in herb_top]
+    # herb_top_latine_name_dict = transfer_pinyin_latin(herb_top)
+    # herb_top = [herb_top_latine_name_dict[h] for h in herb_top]
     logger.info('the unique combined of top {} herb are {}', herb_top, herb_uni_combine)
     if out_type in ['save_figure', 'plot_figure']:
 
@@ -148,6 +164,7 @@ def plot_herb_combined(fangji: classmethod, number_herb, out_type):
             plt.show()
     elif out_type == 'only_data':
         return herb_top, herb_uni_combine
+
 
 def show_detail_one_pair(herb_info, herb_obj, max_ingre):
     herb_name_1 = herb_info.pinyin_herbid_dic[max_ingre[0]]
@@ -214,7 +231,7 @@ def huangqi_gancao(herb_info, herb_obj, max_ingre, cor_matrix ):
 def plot_figure_2(fangji: classmethod, number_herb, out_type):
     # constrained_layout=True
     fig3 = plt.figure(figsize=(8, 8))
-    sns.set_context("paper", font_scale=1.2)
+    sns.set_context("paper", font_scale=1)
 
     gs = gridspec.GridSpec(5, 5)
     # top herb cor frequency
@@ -238,13 +255,19 @@ def plot_figure_2(fangji: classmethod, number_herb, out_type):
                 cbar=True,
                 fmt="d")
     f3_ax1.margins(x=1, y=1)
+    plt.subplots_adjust(top=0.848,
+                        bottom=0.073,
+                        left=0.157,
+                        right=0.882,
+                        hspace=1.0,
+                        wspace=1.0)
     # herb frequency
     f3_ax2 = fig3.add_subplot(gs[0, 1:])
     herb_top, frequency_top = plot_herb_histom(fangji, number_herb, 'only_data')
     sns.barplot(herb_top, frequency_top)
     # for i in zip(herb_top, frequency_top):
     #     f3_ax2.text(i[0], i[1], i[1], color='black', ha="center")
-    f3_ax2.set_xticklabels(f3_ax2.get_xticklabels(), rotation=45)
+    f3_ax2.set_xticklabels(f3_ax2.get_xticklabels(), rotation= 10)
     f3_ax2.set_title('Number of herb formulae'.format(number_herb))
 
     # herb quique combined
@@ -258,7 +281,7 @@ def plot_figure_2(fangji: classmethod, number_herb, out_type):
     plt.tight_layout()
     # need change by plot out , change right , left , space
     if out_type == 'save_figure':
-        plt.savefig('figure/Figure 2.png'.format(number_herb), dpi = 300)
+        plt.savefig('figure/Figure 2.png'.format(number_herb), dpi=300)
         plt.savefig('figure/Figure 2.pdf', format = 'pdf')
     elif out_type == 'plot_figure':
         plt.show()
@@ -458,9 +481,13 @@ def plot_figure_3(out_type):
     result.get_mean()
 
     pd_melt = result.pd_melt
-    pd_melt = pd_melt.rename(columns={'Herb-level distance type':'H','Ingredient-level distance type':'I','class':'group'})
-    fig = plt.figure(figsize=(8, 8))
-    sns.set_context('paper', font_scale=2.4)
+    pd_melt = pd_melt.rename(columns={'Herb-level distance type':'H',
+                                      'Ingredient-level distance type':'I',
+                                      'class':'group'})
+
+    pd_melt = pd_melt.sort_values(by=['H','I'])
+    fig = plt.figure(figsize=(5, 5))
+    sns.set_context('paper', font_scale=1.3)
     sns.set_style('whitegrid')
     g = sns.FacetGrid(pd_melt,
                       row='I',
@@ -470,7 +497,7 @@ def plot_figure_3(out_type):
     g.map_dataframe(sns.violinplot,
                       'group',
               "Distance",
-              palette="Set2", )
+              palette="Set2")
     g.fig.subplots_adjust(wspace=0, hspace=0)
     plt.tight_layout()
     if out_type == 'save_figure':
@@ -500,6 +527,7 @@ def plot_new_figue_S4(out_type):
 
     pd_melt = result.pd_melt
     pd_melt = pd_melt.rename(columns={'Herb-level distance type':'H','Ingredient-level distance type':'I','class':'group'})
+    pd_melt = pd_melt.sort_values(by=['H', 'I'])
     fig = plt.figure(figsize=(8, 8))
     sns.set_context('paper', font_scale=2.4)
     sns.set_style('whitegrid')
@@ -730,5 +758,52 @@ def main():
     # plot_S1_fangji_length(fangji,'save_figure')
     # plot_S2_fangi_frequency(fangji, 'save_figure')
     plot_figure_6(g_obj, ingredients_obj, 'save_figure')
+
+
+#  overlap_distance_linear group by methods pairwise
+def overlap_distance_linear():
+    top_pd = pd.read_csv('result/top_200.csv')
+    top_pd = top_pd.sort_values(by='frequency', ascending=False)
+    pairs_top = list(set(list(zip(top_pd['herb1'], top_pd['herb2']))))
+    overlap_count_top, over_list_dict_top = herb_overlap_ingredient(pairs_top, herb_obj)
+    no_overlap = defaultdict()
+    for k, v in over_list_dict_top.items():
+        if k[0] < k[1]:
+            k_order = k[0] + k[1]
+        else:
+            k_order = k[1] + k[0]
+        no_overlap[k_order] = v
+    top_pd['overlap_no'] = top_pd['pairs'].apply(lambda x: no_overlap[x])
+
+    # plot linear overlap
+    def get_melt(data):
+        value_vars_use = ['separation', 'closest', 'shortest', 'kernel', 'center']
+        id_vars_use = ['herb1', 'herb1_name', 'herb2', 'herb2_name', 'frequency', 'class',
+                       'Ingredient-level distance type', 'overlap_no']
+
+        pd_melt = pd.melt(data, id_vars=id_vars_use,
+                          value_vars=value_vars_use,
+                          value_name='Distance')
+        pd_melt = pd_melt.rename(index=str, columns={'variable': 'Herb-level distance type'})
+        pd_melt['herb_ingre_method'] = pd_melt['Herb-level distance type'] + '_' + pd_melt[
+            'Ingredient-level distance type']
+        pd_melt = pd_melt.rename(columns={'Herb-level distance type': 'H',
+                                          'Ingredient-level distance type': 'I'})
+
+        pd_melt = pd_melt.sort_values(by=['H', 'I'])
+        return pd_melt
+
+    pd_melt = get_melt(top_pd)
+
+    fig = plt.figure(figsize=(5, 5))
+    g = sns.lmplot(x='overlap_no',
+                   y="Distance",
+                   col="H",
+                   row='I',
+                   data=pd_melt)
+    g.set(xlim=(0, 10))
+    plt.show()
+
+
 
 

@@ -11,6 +11,9 @@ from proximity_key import *
 import numpy as np
 from collections import defaultdict
 from functools import reduce
+import MySQLdb
+import MySQLdb.cursors
+
 
 def qc_herb(data):
     herb_ingre_dict = data.groupby('herb_id')['ingredients_id'].apply(list).to_dict()
@@ -20,6 +23,48 @@ def qc_herb(data):
                          key, value in herb_ingre_dict.items()}
     herb_ingre_dict3 = {key: value for key, value in herb_ingre_dict_2.items() if len(value) != 0}
     return herb_ingre_dict3
+
+
+
+# map the ingreidnets out
+def annotaion_ingredients_from_mqsql():
+    # connect mysql
+    db_2 = MySQLdb.connect(host="127.0.0.1", user="yin", passwd="Mqxs320321wyy", db="tcm_infor",
+                           cursorclass=MySQLdb.cursors.DictCursor,
+                           charset="utf8")
+    c = db_2.cursor()
+
+    # decide the search code in mysql. It depend on the search key word we use. one of ['smiles', 'inchikey']
+
+    sql = """
+           select * from ingreidnet_annotation
+           """
+    # perform query in mysql, and return the dataframe result
+    c.execute(sql)
+    inchey_used_2 = c.fetchall()
+    pd_result = pd.DataFrame(list(inchey_used_2))
+    print(pd_result.shape)
+    return pd_result
+
+
+def annotaion_herbs_from_mqsql():
+    # connect mysql
+    db_2 = MySQLdb.connect(host="127.0.0.1", user="yin", passwd="Mqxs320321wyy", db="tcm_infor",
+                           cursorclass=MySQLdb.cursors.DictCursor,
+                           charset="utf8")
+    c = db_2.cursor()
+
+    # decide the search code in mysql. It depend on the search key word we use. one of ['smiles', 'inchikey']
+
+    sql = """
+           select * from herb_information
+           """
+    # perform query in mysql, and return the dataframe result
+    c.execute(sql)
+    inchey_used_2 = c.fetchall()
+    pd_result_herb = pd.DataFrame(list(inchey_used_2))
+    return pd_result_herb
+
 
 
 class Ingredients:
@@ -35,7 +80,8 @@ class Ingredients:
 
     def ingredients_info(self, ingredient):
         ingredient_dict = defaultdict()
-        ingredient_dict['name'] = self.data.loc[ingredient, 'stitch_name']
+        ingredient_dict['stitch_name'] = self.data.loc[ingredient, 'stitch_name']
+        ingredient_dict['name'] = self.data.loc[ingredient, 'Ingredient Name']
         ingredient_dict['target_ensymble'] = self.data.loc[ingredient, 'ensymble'].split(',')
         ingredient_dict['target'] = self.data.loc[ingredient, 'targets'].split(',')
         ingredient_dict['score'] = self.data.loc[ingredient, 'score'].split(',')
@@ -44,7 +90,7 @@ class Ingredients:
 
     def ingre_id_name_dict(self):
         self.data['ingre_2'] = 'I' + self.data['Ingredient id'].astype(str)
-        ingre_id_name_dict_value = dict(zip(self.data['ingre_2'], self.data['stitch_name']))
+        ingre_id_name_dict_value = dict(zip(self.data['ingre_2'], self.data['Ingredient Name']))
         return ingre_id_name_dict_value
 
 

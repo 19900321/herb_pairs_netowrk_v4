@@ -41,7 +41,7 @@ def get_symble_from_entries(entry):
 
 
 def get_entries_from_uniprot(uniprot_id):
-    result_list =  [i['entrezgene'] for i in mg.querymany([uniprot_id], scopes='uniprot',
+    result_list = [i['entrezgene'] for i in mg.querymany([uniprot_id], scopes='uniprot',
                                                   fields='entrezgene', species='human') if 'entrezgene' in i.keys()][0]
     if len(result_list) ==0:
         return None

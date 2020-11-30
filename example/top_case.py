@@ -12,6 +12,7 @@ from figures_draw import herb_overlap_ingredient
 import figures_draw
 import permuation_herbs
 from permuation_herbs import Result_distance
+from figures_draw import transfer_pinyin_latin, annotaion_herbs_from_mqsql, annotaion_ingredients_from_mqsql
 
 
 def change_herb_order(top_1500):
@@ -56,18 +57,46 @@ def get_random(fangji, herb_distance_obj, n):
     random_result.to_csv('result/result_random_0_{}.csv'.format(n))
 
 # get frequency, table S1
+
 frequency_top = pd.DataFrame.from_dict(dict(fangji.herb_frequency_dict.most_common()), orient = 'index' ).reset_index()
 frequency_top.columns = ['Herb', 'frequency']
-frequency_top.to_csv('result/Table S1_new.csv')
-frequency_top.to_csv('Table/Table S1_new.csv')
+frequency_top['Herb'] = frequency_top['Herb'].apply(lambda x:x[0])
+#herb_latine_dict = transfer_pinyin_latin([h for h in list(frequency_top['Herb'])])
+#frequency_top['Herb Latin name'] = frequency_top['Herb'].apply(lambda x:herb_latine_dict[x.strip()] if x.strip() in herb_latine_dict else None)
+table_S1 = frequency_top.sort_values(by=['frequency'], ascending=False)
+herb_pd = annotaion_herbs_from_mqsql()
+table_S1 = pd.merge(table_S1,
+         herb_pd,
+         left_on='Herb',
+         right_on='Pinyin Name',
+         how='left')
+col_replace = {
+        'herb-id': 'TCMID herb id',
+        'website': 'TCMID herb website',
+        'Frequency': 'Frequency'
+    }
+table_S1 = table_S1.rename(columns = col_replace)
+table_S1['TCMID herb website'] = table_S1['TCMID herb website'].apply(lambda x: x.replace('http://www.megabionet.org/','http://119.3.41.228:8000/') if isinstance(x, str) else x)
+table_S1.to_csv('result/Table S1.txt', index=None, sep= '\t')
+table_S1.to_csv('Table/Table S1.csv', index=None, sep= '\t')
+
+
+
+
 
 #get the  top 200
 n_top_pair = 200
 top_result_real = get_distance_n(fangji, herb_distance_obj, n_top_pair)
 top_result_real.to_csv('result/top_{}.csv'.format(n_top_pair))
-table_S2 = top_result_real['herb1','herb1_name', 'herb2', 'herb2_name', 'frequency'].drop_duplicates()
+top_result_real= pd.read_csv('result/top_200.csv'.format(n_top_pair))
+table_S2 = top_result_real[['herb1','herb1_name', 'herb2', 'herb2_name', 'frequency']].drop_duplicates()
+herb_latine_dict_1 = transfer_pinyin_latin([h for h in list(table_S2['herb1_name'])])
+table_S2['Herb1 Latin name'] = table_S2['herb1_name'].apply(lambda x:herb_latine_dict_1[x.strip()] if x.strip() in herb_latine_dict_1 else None)
+herb_latine_dict_2 = transfer_pinyin_latin([h for h in list(table_S2['herb2_name'])])
+table_S2['Herb2 Latin name'] =  table_S2['herb2_name'].apply(lambda x:herb_latine_dict_2[x.strip()] if x.strip() in herb_latine_dict_2 else None)
+
 table_S2.to_csv('result/Table S2.csv')
-table_S2.to_csv('Table/Table S2.csv')
+table_S2.to_csv('Table/Table S2.csv', index = None)
 
 # get top 10000
 n_tops = 10000
@@ -83,8 +112,9 @@ filename_random = 'result/result_random_0_10000.csv'
 result = Result_distance(filename_top, filename_random) #47 time
 file_folder = 'top_random_new'
 result.save_analysis(file_folder, forbid_include=False)
-result.pd_mean.to_csv('result/Table 1.csv')
-result.pd_mean.to_csv('Table/Table 1.csv')
+table_1 = result.pd_mean
+table_1.to_csv('result/Table 1.csv')
+table_1.to_csv('Table/Table 1.csv')
 
 
 # get real table 1 with 10000
@@ -93,20 +123,20 @@ filename_random = 'result/result_random_0_10000.csv'
 result_10000 = Result_distance(filename_top_10000, filename_random)
 result_10000.get_mean()
 mean_10000 = result_10000.pd_mean
-mean_10000 = mean_10000.rename(columns = {'Distance for top herb pairs':'Distance for top 10000 herb pairs'})
+mean_10000 = mean_10000.rename(columns={'Distance for top herb pairs':'Distance for top 10000 herb pairs'})
 
 # get 114 ingreidnets, use step 9
 result_no_overlap = Result_distance('result/no_overlap_dis.csv', 'result/result_random_0_10000.csv' )
 result_no_overlap.get_mean()
 mean_no_overlap = result_no_overlap.pd_mean
-mean_no_overlap = mean_no_overlap.rename(columns = {'Distance for top herb pairs':'Distance for top no_overlap 114 herb pairs'})
+mean_no_overlap = mean_no_overlap.rename(columns={'Distance for top herb pairs':'Distance for top no_overlap 114 herb pairs'})
 
 # merge means
 # read
 mean_200 = pd.read_csv('result/Table 1.csv')
 
-mean_200['Distance for top 10000 herb pairs'] =  mean_10000['Distance for top 10000 herb pairs']
-mean_200['Distance for top no_overlap 114 herb pairs'] =  mean_no_overlap['Distance for top no_overlap 114 herb pairs']
+mean_200['Distance for top 10000 herb pairs'] = mean_10000['Distance for top 10000 herb pairs']
+mean_200['Distance for top no_overlap 114 herb pairs'] = mean_no_overlap['Distance for top no_overlap 114 herb pairs']
 cols_names = ['Herb-level distance type',
               'Ingredient-level distance type',
               'Distance for top herb pairs',
@@ -118,7 +148,8 @@ cols_names = ['Herb-level distance type',
               'AUPRC',
        ]
 mean_200 = mean_200[cols_names]
-mean_200.to_csv('Table/Table 1.csv')
+table_1 = mean_200
+table_1.to_csv('Table/Table 1.csv')
 
 
 # plot figure S2
@@ -179,21 +210,29 @@ figures_draw.plot_fig_S5(mean_pd_no_overlap, 'save_figure')
 # Step 11. Generate the literature collected pairs, get the distance PRC and UAC, plot figure S5
 filename_classic = 'result/classic_distances_recommend.csv'
 classic_pd = pd.read_csv(filename_classic)
-table_S2 = classic_pd[['herb1','herb1_name', 'herb2', 'herb2_name', 'frequency']].drop_duplicates()
-table_S2.to_csv('result/Table S3.csv')
-table_S2.to_csv('Table/Table S3.csv')
+table_S3 = classic_pd[['herb1','herb1_name', 'herb2', 'herb2_name', 'frequency']].drop_duplicates()
+herb_latine_dict_1 = transfer_pinyin_latin([h for h in list(table_S3['herb1_name'])])
+table_S3['Herb1 Latin name'] = table_S3['herb1_name'].apply(lambda x:herb_latine_dict_1[x.strip()] if x.strip() in herb_latine_dict_1 else None)
+herb_latine_dict_2 = transfer_pinyin_latin([h for h in list(table_S3['herb2_name'])])
+table_S3['Herb2 Latin name'] = table_S3['herb2_name'].apply(lambda x:herb_latine_dict_2[x.strip()] if x.strip() in herb_latine_dict_2 else None)
+
+table_S3.to_csv('result/Table S3.csv')
+table_S3 = table_S3.drop(columns=['frequency'])
+table_S3.to_csv('Table/Table S3.csv', index = None)
 
 filename_random = 'result/result_random_0_10000.csv'
 result = Result_distance(filename_classic, filename_random)
 file_folder = 'recom_random_new'
 result.save_analysis(file_folder, forbid_include=False) #repeat 35 time
-result.pd_mean.to_csv('result/literature_mean.csv')
-result.pd_mean.to_csv('result/Table S3.csv')
-result.pd_mean.to_csv('Table/Table S3.csv')
+table_S4 =  result.pd_mean
+table_S4.to_csv('result/literature_mean.csv')
+table_S4.to_csv('result/Table S4.csv')
+table_S4.to_csv('Table/Table S4.csv', index = None)
 
 # plot figure S6， use R code
 # mean_pd_literature = pd.read_csv('result/literature_mean.csv')
 # figures_draw.plot_figure_S6(mean_pd_literature, 'save_figure')
+
 
 # Step 12, use casestudy2 to plot HUANGQI GANCAO network
 from example.casestudy2 import  get_ingre_dis, prepare_center_distance_list_2, ingre_target_network
@@ -204,233 +243,268 @@ dis_pd_all, center_dict = get_ingre_dis(herb_distance_obj, herb_info, method_lis
 # generate Table 2
 mean_pd_top = pd.read_csv('result/Table 1.csv')
 pre_pd, center_pd = prepare_center_distance_list_2(center_dict, mean_pd_top)
-center_pd.to_csv('result/Table 2.csv')
-center_pd.to_csv('Table/Table 2.csv')
+Table_2 = center_pd
+Table_2.to_csv('result/Table 2.csv')
+Table_2.to_csv('Table/Table 2.csv')
 
 # plot the Figure 6
 figures_draw.plot_figure_6(g_obj, ingredients_obj, 'save_figure')
 # plot_center_network(center_dict, 'shortest', g_obj.G, ingredients_obj)
 
 
+# prepare the herb annotation table S6
+# Prepare  table S6 the annotation for herb
+def prepare_table_S6():
+    herbs = ['HUANG LIAN',
+            'WU ZHU YU',
+             'HUANG QI',
+             'GAN CAO',
+             'DANG GUI',
+             'REN SHEN',
+             'QIANG HUO',
+             'DU HUO',
+             'HUANG QIN',
+             'FANG FENG',
+             'BAI ZHU',
+             'FU LING',
+             'CHUAN XIONG',
+             'CHEN PI',
+             'MU DAN PI',
+             'DAN SHEN',
+             'CHA SHU',
+             'ZI SHAN',
+             'MU DAN PI',
+             'YIN YANG HUO',
+             'HUANG BAI',
+             'XIAN MAO'
+             ]
+    herb_pd = annotaion_herbs_from_mqsql()
+    herb_pd_select = herb_pd[herb_pd['Pinyin Name'].isin(herbs)]
+table_s6 =  prepare_table_S6()
+table_s6.to_csv('result/herb_annotation.txt', encoding='utf8')
+table_s6.to_csv('result/Tabel_S6.txt', encoding='utf8')
+table_s6.to_csv('table/Tabel_S6.txt', encoding='utf8')
+
+
 # Step 13. check the numbers in paper
-
-def dict_statistic(dictionary:dict):
-    n = 0
-    n_ob = []
-    for k,v in dictionary.items():
-        n += len(v)
-        n_ob += v
-    return len(dictionary), len(set(n_ob)), n
-
-
-N_herb_formulae = len(fangji.fangji_herbid_dict) # 46929
-dict_statistic(fangji.fangji_herbid_dict) # (46929, 1107, 231251)
-
-# the number of formulae less than 20
-fang_len = dict(Counter([len(v) for k, v in fangji.fangji_herb_dict.items()]))
-sum([v for k, v in fang_len.items() if k <20])/sum(list(fang_len.values()))
-# 0.9790
-#
-average_number = 231251/46929 # 4.927677981631827
-fangji.herb_frequency_dict.most_common(10)
-'''
-(('GAN CAO',), 12518),
-(('DANG GUI',), 7417),
- (('REN SHEN',), 7390),
- (('BAI ZHU',), 5259),
- (('HUANG QIN',), 4163),
- (('FANG FENG',), 4074),
- (('CHUAN QIONG',), 4007),
- (('FU LING',), 3666),
- (('CHEN PI',), 3650),
- (('MU XIANG',), 3642)]
-'''
-
-N_herb_total = len(fangji.herb_frequency_dict) #16767
-N_herb_pairs = len(fangji.herb_pair_frequency_dict) #349197
-
-a = []
-for h in list(fangji.herb_pair_frequency_dict.keys()):
-    a += h
-N_herb_for_pair = len(set(a)) # 12129
-
-N_herb_pairs_with_id = len(fangji.fangji_herbid_dict) # 24552
-b = []
-for h in list(fangji.herbid_frequency_dict.keys()):
-    b += h
-N_herb_for_pair_with_id = len(set(b)) # 1076
+def numbers_in_paper():
+    def dict_statistic(dictionary:dict):
+        n = 0
+        n_ob = []
+        for k,v in dictionary.items():
+            n += len(v)
+            n_ob += v
+        return len(dictionary), len(set(n_ob)), n
 
 
+    N_herb_formulae = len(fangji.fangji_herbid_dict) # 46929
+    dict_statistic(fangji.fangji_herbid_dict) # (46929, 1107, 231251)
 
-# herb-ingredient
-herb_ingredient_total = len(herb_obj.herb_ingre_dict_all) #8199
+    # the number of formulae less than 20
+    fang_len = dict(Counter([len(v) for k, v in fangji.fangji_herb_dict.items()]))
+    sum([v for k, v in fang_len.items() if k <20])/sum(list(fang_len.values()))
+    # 0.9790
+    #
+    average_number = 231251/46929 # 4.927677981631827
+    fangji.herb_frequency_dict.most_common(10)
+    '''
+    (('GAN CAO',), 12518),
+    (('DANG GUI',), 7417),
+     (('REN SHEN',), 7390),
+     (('BAI ZHU',), 5259),
+     (('HUANG QIN',), 4163),
+     (('FANG FENG',), 4074),
+     (('CHUAN QIONG',), 4007),
+     (('FU LING',), 3666),
+     (('CHEN PI',), 3650),
+     (('MU XIANG',), 3642)]
+    '''
 
-# 17753 pairs between 4415 herbs and 3917 ingredient
-dict_statistic(herb_obj.herb_ingre_dict) #(4415, 3917, 17753)
+    N_herb_total = len(fangji.herb_frequency_dict) #16767
+    N_herb_pairs = len(fangji.herb_pair_frequency_dict) #349197
 
-# targets related
-# 4330 ingredients with 3171 targtes 25050 pairs
-dict_statistic(ingredients_obj.ingre_tar_dict)# (4330, 3171, 25050)
+    a = []
+    for h in list(fangji.herb_pair_frequency_dict.keys()):
+        a += h
+    N_herb_for_pair = len(set(a)) # 12129
 
-
-# frequency range of top 200
-top_pd = pd.read_csv('result/top_200.csv')
-top_pd = top_pd.sort_values(by='frequency', ascending=False)
-list(top_pd['frequency'])[0] # 3846
-list(top_pd['frequency'])[-1] # 358
-
-
-# fangji
-fangji.herbid_frequency_dict.most_common(10)
-'''
-[(('GAN CAO', 'REN SHEN'), 3846),
- (('DANG GUI', 'GAN CAO'), 2907),
- (('BAI ZHU', 'REN SHEN'), 2599),
- (('BAI ZHU', 'GAN CAO'), 2578),
- (('CHUAN QIONG', 'DANG GUI'), 2296),
- (('GAN CAO', 'HUANG QIN'), 2265),
- (('DANG GUI', 'REN SHEN'), 2097),
- (('CHEN PI', 'GAN CAO'), 2002),
- (('FANG FENG', 'GAN CAO'), 1960),
- (('FU LING', 'GAN CAO'), 1817)]
- '''
-
-#for the 349197 herb pairs, the majority of them (99.9%) occurred in less than 100 herbal formulae
-n_100 = 0
-n_500 = 0
-for k in fangji.herb_pair_frequency_dict.values():
-    if k < 100:
-        n_100 += 1
-    if k> 500:
-        n_500 +=1
-n_100/len(fangji.herb_pair_frequency_dict) # 0.9944157595855635
-
-len(fangji.herb_pair_frequency_dict) - n_100 # 1950
-print(n_500)
-
-# the number of unique herb from top 200 herb pairs
-herb_unique = set(list(top_pd['herb1'].unique()) + list(top_pd['herb2'].unique())) # 61
-len(herb_unique)
-# average number of ingredients
-n_i = 0
-for h in herb_unique:
-    ingredients = dict(herb_obj.herb_ingre_dict)[h]
-    n_i += len(ingredients)
-n_i/len(herb_unique)
-
-from figures_draw import herb_overlap_ingredient
-top_pd = top_pd.sort_values(by='frequency', ascending=False)
-pairs_top = list(set(list(zip(top_pd['herb1'],top_pd['herb2']))))
-pairs_random = list(set(list(zip(random_pd['herb1'],random_pd['herb2']))))
-overlap_count_top, over_list_dict_top = herb_overlap_ingredient(pairs_top, herb_obj)
-overlap_count_random, over_list_dict_random = herb_overlap_ingredient(pairs_random, herb_obj)
-n_0_common_ingre = overlap_count_top[0]
-
-n_1_more_common_ingre = sum(overlap_count_top.values()) - n_0_common_ingre
-n_3_more_common_ingre = sum(overlap_count_top.values()) - \
-                        n_0_common_ingre -overlap_count_top[1] -\
-                        overlap_count_top[2] - \
-                        overlap_count_top[3]
-n_1_more_common_ingre / sum(overlap_count_top.values())
-
-n_1_random = sum(overlap_count_random.values()) - overlap_count_random[0]
-
-n_1_random/sum(overlap_count_random.values())
+    N_herb_pairs_with_id = len(fangji.fangji_herbid_dict) # 24552
+    b = []
+    for h in list(fangji.herbid_frequency_dict.keys()):
+        b += h
+    N_herb_for_pair_with_id = len(set(b)) # 1076
 
 
-# qiang huo and du huo, ('H4776', 'QIANG HUO', 'H4449', 'DU HUO'
-max_ingre = max(over_list_dict_top.items(), key=operator.itemgetter(1))
-dict(fangji.herbid_frequency_dict)[('H4449', 'H4776')] #  522
+
+    # herb-ingredient
+    herb_ingredient_total = len(herb_obj.herb_ingre_dict_all) #8199
+
+    # 17753 pairs between 4415 herbs and 3917 ingredient
+    dict_statistic(herb_obj.herb_ingre_dict) #(4415, 3917, 17753)
+
+    # targets related
+    # 4330 ingredients with 3171 targtes 25050 pairs
+    dict_statistic(ingredients_obj.ingre_tar_dict)# (4330, 3171, 25050)
 
 
-from figures_draw import show_detail_one_pair
-print(show_detail_one_pair(herb_info, herb_obj, max_ingre[0]))
-'''
-'H4449', 'DU HUO', 'H4776', 'QIANG HUO', ['gamma-amin.yri.', 'Camphor', 'columbianetin', 'guaiol', 'guanidinium', 'isoimperatorin', 'isopimpinellin', 'nodakenin', 'scopoletin', 'osthole'])
-'''
-
-## show huangqi gancao common ingredient, huangqi H6919,  gancao H6801,
-tabel_S1 = pd.read_csv('result/Table S1.csv')
-tabel_S1[tabel_S1['pairs']=='H6801H6919']
-huangqi_gancao_set =  (( 'H6801', 'H6919'), 1411)
-huangqi_gancao_set =  ( 'H6801', 'H6919')
-print(show_detail_one_pair(herb_info, herb_obj, huangqi_gancao_set))
-'''
-('H6801', 'GAN CAO', 'H6919', 'HUANG QI', ['formononetin', 'clionasterol', 'clionasterol'])
-'''
+    # frequency range of top 200
+    top_pd = pd.read_csv('result/top_200.csv')
+    top_pd = top_pd.sort_values(by='frequency', ascending=False)
+    list(top_pd['frequency'])[0] # 3846
+    list(top_pd['frequency'])[-1] # 358
 
 
-# PRC AUC
-mean_pd = pd.read_csv('result/Table 1.csv')
-mean_pd[mean_pd['p-value'] <0.05].shape[0] # 16
-mean_pd['difference'] = mean_pd['Distance for random herb pairs'] - mean_pd['Distance for top herb pairs']
+    # fangji
+    fangji.herbid_frequency_dict.most_common(10)
+    '''
+    [(('GAN CAO', 'REN SHEN'), 3846),
+     (('DANG GUI', 'GAN CAO'), 2907),
+     (('BAI ZHU', 'REN SHEN'), 2599),
+     (('BAI ZHU', 'GAN CAO'), 2578),
+     (('CHUAN QIONG', 'DANG GUI'), 2296),
+     (('GAN CAO', 'HUANG QIN'), 2265),
+     (('DANG GUI', 'REN SHEN'), 2097),
+     (('CHEN PI', 'GAN CAO'), 2002),
+     (('FANG FENG', 'GAN CAO'), 1960),
+     (('FU LING', 'GAN CAO'), 1817)]
+     '''
 
-best_difference = mean_pd[mean_pd['difference'] == max(mean_pd['difference'])]
-mean_pd[mean_pd['p-value'] == min(mean_pd['p-value'])]
+    #for the 349197 herb pairs, the majority of them (99.9%) occurred in less than 100 herbal formulae
+    n_100 = 0
+    n_500 = 0
+    for k in fangji.herb_pair_frequency_dict.values():
+        if k < 100:
+            n_100 += 1
+        if k> 500:
+            n_500 +=1
+    n_100/len(fangji.herb_pair_frequency_dict) # 0.9944157595855635
+
+    len(fangji.herb_pair_frequency_dict) - n_100 # 1950
+    print(n_500)
+
+    # the number of unique herb from top 200 herb pairs
+    herb_unique = set(list(top_pd['herb1'].unique()) + list(top_pd['herb2'].unique())) # 61
+    len(herb_unique)
+    # average number of ingredients
+    n_i = 0
+    for h in herb_unique:
+        ingredients = dict(herb_obj.herb_ingre_dict)[h]
+        n_i += len(ingredients)
+    n_i/len(herb_unique)
+
+    from figures_draw import herb_overlap_ingredient
+    top_pd = top_pd.sort_values(by='frequency', ascending=False)
+    pairs_top = list(set(list(zip(top_pd['herb1'],top_pd['herb2']))))
+    pairs_random = list(set(list(zip(random_pd['herb1'],random_pd['herb2']))))
+    overlap_count_top, over_list_dict_top = herb_overlap_ingredient(pairs_top, herb_obj)
+    overlap_count_random, over_list_dict_random = herb_overlap_ingredient(pairs_random, herb_obj)
+    n_0_common_ingre = overlap_count_top[0]
+
+    n_1_more_common_ingre = sum(overlap_count_top.values()) - n_0_common_ingre
+    n_3_more_common_ingre = sum(overlap_count_top.values()) - \
+                            n_0_common_ingre -overlap_count_top[1] -\
+                            overlap_count_top[2] - \
+                            overlap_count_top[3]
+    n_1_more_common_ingre / sum(overlap_count_top.values())
+
+    n_1_random = sum(overlap_count_random.values()) - overlap_count_random[0]
+
+    n_1_random/sum(overlap_count_random.values())
 
 
-# common ingredients
-n_1_more_common_ingre = sum(overlap_count_top.values()) - n_0_common_ingre
-n_3_more_common_ingre = sum(overlap_count_top.values()) - n_0_common_ingre -overlap_count_top[1] -overlap_count_top[2] - overlap_count_top[3]
-
-#PRC AUC
-
-# AVERAGE
-average_auc = np.mean(mean_pd['AUROC']) # 0.65
-average_prc = np.mean(mean_pd['AUPRC']) # 0.72
+    # qiang huo and du huo, ('H4776', 'QIANG HUO', 'H4449', 'DU HUO'
+    max_ingre = max(over_list_dict_top.items(), key=operator.itemgetter(1))
+    dict(fangji.herbid_frequency_dict)[('H4449', 'H4776')] #  522
 
 
-# center level comparison
-mean_pd.groupby('Herb-level distance type')['AUROC'].mean()
-'''
-center        0.803612
-closest        0.792437
-kernel        0.504596
-separation    0.673833
-shortest      0.462200
-'''
+    from figures_draw import show_detail_one_pair
+    print(show_detail_one_pair(herb_info, herb_obj, max_ingre[0]))
+    '''
+    'H4449', 'DU HUO', 'H4776', 'QIANG HUO', ['gamma-amin.yri.', 'Camphor', 'columbianetin', 'guaiol', 'guanidinium', 'isoimperatorin', 'isopimpinellin', 'nodakenin', 'scopoletin', 'osthole'])
+    '''
 
-mean_pd.groupby('Herb-level distance type')['AUPRC'].mean()
-'''
-center        0.828411
-closest        0.797316
-kernel        0.634952
-separation    0.738881
-shortest      0.607763
-'''
+    ## show huangqi gancao common ingredient, huangqi H6919,  gancao H6801,
+    tabel_S1 = pd.read_csv('result/Table S1.csv')
+    tabel_S1[tabel_S1['pairs']=='H6801H6919']
+    huangqi_gancao_set = (('H6801', 'H6919'), 1411)
+    huangqi_gancao_set = ('H6801', 'H6919')
+    print(show_detail_one_pair(herb_info, herb_obj, huangqi_gancao_set))
+    '''
+    ('H6801', 'GAN CAO', 'H6919', 'HUANG QI', ['formononetin', 'clionasterol', 'clionasterol'])
+    '''
 
-# The literature collected pairs
-mean_pd_literature = pd.read_csv('result/Table S3.csv')
-average_auc_liter = np.mean(mean_pd_literature['AUROC']) # 0.62
-average_prc_liter = np.mean(mean_pd_literature['AUPRC']) # 0.65
-# max of literature
-liter_max = mean_pd_literature[mean_pd_literature['AUPRC'] == mean_pd_literature['AUPRC'].max()]
-liter_max[['Herb-level distance type',	'Ingredient-level distance type'
-]]
-liter_max[['AUPRC',	'AUROC']]
 
-# THE common herbs between top 200 and literatures
-tabel_S1 = pd.read_csv('result/Table S1.csv')
-table_S2 = pd.read_csv('result/Table S2.csv')
+    # PRC AUC
+    mean_pd = pd.read_csv('result/Table 1.csv')
+    mean_pd[mean_pd['p-value'] <0.05].shape[0] # 16
+    mean_pd['difference'] = mean_pd['Distance for random herb pairs'] - mean_pd['Distance for top herb pairs']
 
-tabel_S1['pairs'] = tabel_S1['herb1'] + tabel_S1['herb2']
+    best_difference = mean_pd[mean_pd['difference'] == max(mean_pd['difference'])]
+    mean_pd[mean_pd['p-value'] == min(mean_pd['p-value'])]
 
-table_S2['pairs'] = table_S2['herb1'] + table_S2['herb2']
 
-not_common_herb = tabel_S1[~tabel_S1['pairs'].isin(table_S2['pairs'])]
+    # common ingredients
+    n_1_more_common_ingre = sum(overlap_count_top.values()) - n_0_common_ingre
+    n_3_more_common_ingre = sum(overlap_count_top.values()) - n_0_common_ingre -overlap_count_top[1] -overlap_count_top[2] - overlap_count_top[3]
 
-danggui = not_common_herb[(not_common_herb ['herb1']=='H2538')|(not_common_herb ['herb2']=='H2538')]
-len([i  for i in list(tabel_S1['pairs']) if i in list(table_S2['pairs'])]) # 32
+    #PRC AUC
 
-# huangqi and gancao
+    # AVERAGE
+    average_auc = np.mean(mean_pd['AUROC']) # 0.65
+    average_prc = np.mean(mean_pd['AUPRC']) # 0.72
 
-table_S4 = pd.read_csv('result/Table S4.csv')
-table_S4.groupby('Herb name')['Ingredient id'].count()
 
-'''
-GAN CAO     27
-HUANG QI    15
-'''
+    # center level comparison
+    mean_pd.groupby('Herb-level distance type')['AUROC'].mean()
+    '''
+    center        0.803612
+    closest        0.792437
+    kernel        0.504596
+    separation    0.673833
+    shortest      0.462200
+    '''
+
+    mean_pd.groupby('Herb-level distance type')['AUPRC'].mean()
+    '''
+    center        0.828411
+    closest        0.797316
+    kernel        0.634952
+    separation    0.738881
+    shortest      0.607763
+    '''
+
+    # The literature collected pairs
+    mean_pd_literature = pd.read_csv('result/Table S3.csv')
+    average_auc_liter = np.mean(mean_pd_literature['AUROC']) # 0.62
+    average_prc_liter = np.mean(mean_pd_literature['AUPRC']) # 0.65
+    # max of literature
+    liter_max = mean_pd_literature[mean_pd_literature['AUPRC'] == mean_pd_literature['AUPRC'].max()]
+    liter_max[['Herb-level distance type',	'Ingredient-level distance type'
+    ]]
+    liter_max[['AUPRC',	'AUROC']]
+
+    # THE common herbs between top 200 and literatures
+    tabel_S1 = pd.read_csv('result/Table S1.csv')
+    table_S2 = pd.read_csv('result/Table S2.csv')
+
+    tabel_S1['pairs'] = tabel_S1['herb1'] + tabel_S1['herb2']
+
+    table_S2['pairs'] = table_S2['herb1'] + table_S2['herb2']
+
+    not_common_herb = tabel_S1[~tabel_S1['pairs'].isin(table_S2['pairs'])]
+
+    danggui = not_common_herb[(not_common_herb ['herb1']=='H2538')|(not_common_herb ['herb2']=='H2538')]
+    len([i  for i in list(tabel_S1['pairs']) if i in list(table_S2['pairs'])]) # 32
+
+    # huangqi and gancao
+
+    table_S4 = pd.read_csv('result/Table S4.csv')
+    table_S4.groupby('Herb name')['Ingredient id'].count()
+
+    '''
+    GAN CAO     27
+    HUANG QI    15
+    '''
 
 #
 
@@ -469,3 +543,40 @@ HUANG QI    15
 #                          'herb2_name','frequency']]
 # top_1500_real.to_csv('result/top_1_1500_new.csv')
 # top_200_pd.to_csv('result/top_200.csv')
+
+# calculate the mudularity
+
+import networkx as nx
+
+def get_melt(data):
+    value_vars_use = ['separation', 'closest', 'shortest', 'kernel', 'center']
+    id_vars_use = ['herb1', 'herb1_name', 'herb2', 'herb2_name', 'frequency', 'class',
+                   'Ingredient-level distance type', 'overlap_no']
+
+    pd_melt = pd.melt(data, id_vars=id_vars_use,
+                      value_vars=value_vars_use,
+                      value_name='Distance')
+    pd_melt = pd_melt.rename(index=str, columns={'variable': 'Herb-level distance type'})
+    pd_melt['herb_ingre_method'] = pd_melt['Herb-level distance type'] + '_' + pd_melt[
+        'Ingredient-level distance type']
+    pd_melt = pd_melt.rename(columns={'Herb-level distance type': 'H',
+                                      'Ingredient-level distance type': 'I'})
+
+    pd_melt = pd_melt.sort_values(by=['H', 'I'])
+    return pd_melt
+
+top_pd = pd.read_csv('result/top_10000.csv')
+pd_melt = get_melt(top_pd)
+import networkx as nx
+import networkx.algorithms.community as nx_comm
+from collections import defaultdict
+r = defaultdict()
+for m in list(pd_melt['herb_ingre_method'].unique()):
+    data = pd_melt[pd_melt['herb_ingre_method']==m][['herb1', 'herb2','Distance']]
+    data =  data.rename(columns={'herb1':'source', 'herb2':'target','Distance':'weight'})
+    G = nx.from_pandas_edgelist(data, edge_attr=True)
+    mudularity_score = nx_comm.modularity( G, nx_comm.label_propagation_communities(G))
+    print('{} modularity score is {}'.format(m, mudularity_score))
+    r[m] = mudularity_score
+r_pd = pd.DataFrame.from_dict(r, orient='methods').reset_index()
+r_pd.columns = ['methods', 'modularity score']

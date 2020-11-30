@@ -89,6 +89,4 @@ class Disease:
         ingre_z_score_dict = {ingre: self.cal_disease_ingre_z_score(disease,
                                                                     ingre, distance_method, ingre_tar_dict,
                                                                     random_time, seed) for ingre in ingres}
-
-
         return ingre_z_score_dict

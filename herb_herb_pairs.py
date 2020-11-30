@@ -31,7 +31,6 @@ class Herb_Info( ):
         return self.data.columns
 
     def herb_names_transfer(self, key_words, name_type):
-
         return self.data.loc[self.data.where(self.data == key_words).any(axis=1), name_type]
 
     def herb_pinyin_id_dic(self):
@@ -42,6 +41,7 @@ class Herb_Info( ):
         herb_pinyin_dic = dict(zip(self.data['herb-id'], self.data['Pinyin Name'],))
         return herb_pinyin_dic
 
+
 def reoder_tuple(x):
     if len(x) ==2:
         if x[0] <= x[1]:
@@ -50,6 +50,7 @@ def reoder_tuple(x):
             return tuple([x[1], x[0]])
     else:
         return x
+
 
 import itertools
 from collections import Counter

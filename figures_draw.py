@@ -19,6 +19,7 @@ from collections import Counter
 from functools import reduce
 from collections import defaultdict
 import seaborn as sns
+from PIL import Image
 from generate_objects import *
 from sklearn.preprocessing import MultiLabelBinarizer
 import matplotlib.gridspec as gridspec
@@ -63,6 +64,7 @@ import seaborn as sns
 def plot_box_p_auc_sea(p_value_auc_new_3):
     for col_value in ["p_auc_list_new", "p_value_list_new"]:
         plt.figure(figsize=(27, 15))
+        sns.set(font='Arial')
         sns.set_context("paper", font_scale=2)
         g = sns.boxplot(x="herb_distance_method",
                         y=col_value,
@@ -150,7 +152,7 @@ def plot_herb_combined(fangji: classmethod, number_herb, out_type):
     herb_uni_combine = [herb_count[h] for h in herb_top]
     # herb_top_latine_name_dict = transfer_pinyin_latin(herb_top)
     # herb_top = [herb_top_latine_name_dict[h] for h in herb_top]
-    logger.info('the unique combined of top {} herb are {}', herb_top, herb_uni_combine)
+    # logger.info('the unique combined of top {} herb are {}', herb_top, herb_uni_combine)
     if out_type in ['save_figure', 'plot_figure']:
 
         fig, ax = plt.subplots(figsize=(9, 12))
@@ -231,8 +233,7 @@ def huangqi_gancao(herb_info, herb_obj, max_ingre, cor_matrix ):
 def plot_figure_2(fangji: classmethod, number_herb, out_type):
     # constrained_layout=True
     fig3 = plt.figure(figsize=(8, 8))
-    sns.set_context("paper", font_scale=1)
-
+    sns.set(font='Arial', style="white",context= "paper", font_scale=1.2)
     gs = gridspec.GridSpec(5, 5)
     # top herb cor frequency
     f3_ax1 = fig3.add_subplot(gs[1:, 1:])
@@ -283,6 +284,13 @@ def plot_figure_2(fangji: classmethod, number_herb, out_type):
     if out_type == 'save_figure':
         plt.savefig('figure/Figure 2.png'.format(number_herb), dpi=300)
         plt.savefig('figure/Figure 2.pdf', format = 'pdf')
+        plt.savefig('figure/Figure 2.svg', dpi=300, format='svg')
+        # # Save the image in memory in PNG format
+
+        # Load this image into PIL
+        png2 = Image.open('figure/Figure 2.png')
+        # Save as TIFF
+        png2.save('figure/Figure 2.tiff', format='tiff', dpi=(300, 300))
     elif out_type == 'plot_figure':
         plt.show()
 
@@ -294,14 +302,13 @@ def plot_S1_fangji_length(fangji, out_type):
     x_1 = [str(k) for k in list(fang_len.keys())]
     y_1 = list(fang_len.values())
     fang_total = len(fangji.fangji_herb_dict)
-    y_2 = [ y * 100 / fang_total for y in y_1]
+    y_2 = [y * 100 / fang_total for y in y_1]
 
     herb_mean = np.mean([len(v) for k, v in fangji.fangji_herbid_dict.items()])
-    fang_len_dict = {k:len(v) for k, v in fangji.fangji_herb_dict.items()}
+    fang_len_dict = {k: len(v) for k, v in fangji.fangji_herb_dict.items()}
     # max_fangji =  max(fang_len_dict.items(), key=operator.itemgetter(1))[0]
-    sns.set_style("white")
+    sns.set(font='Arial', style="white",context= "paper", font_scale=1.2)
     fig, ax1 = plt.subplots(figsize=(8, 6))
-    sns.set_context("paper", font_scale=1.2)
     plt.xlabel('Number of herbs')
     ax1.set_ylabel('Count of TCM formulae',
                    color="black")
@@ -311,21 +318,31 @@ def plot_S1_fangji_length(fangji, out_type):
     for label in ax1.get_xticklabels()[::5]:
         label.set_visible(True)
     ax1.tick_params(axis='y')
+
     ax2 = ax1.twinx()
     ax2.set_ylabel('Percentage %',
                    color="black")
-    ax2= sns.lineplot(x_1,
-             y_2,
-             color="black",
-                      marker="o",
-                      lw=0.5,markersize=6,
-                      sort=False
-             )
+    ax2 = sns.lineplot([int(x)-1 for x in x_1],
+                       y_2,
+                       color="black",
+                       marker="o",
+                       lw=0.5, markersize=6,
+                       sort=False
+                       )
 
     #plt.title('The number of herb in one prescription', fontsize=20)
     if out_type == 'save_figure':
-        plt.savefig('figure/Figure S1.pdf',   format = 'pdf')
         plt.savefig('figure/Figure S1.png', dpi=300)
+
+        plt.savefig('figure/Figure S1.pdf', format='pdf')
+
+        plt.savefig('figure/Figure S1.svg', dpi=300, format='svg')
+        # # Save the image in memory in PNG format
+
+        # Load this image into PIL
+        png2 = Image.open('figure/Figure S1.png')
+        # Save as TIFF
+        png2.save('figure/Figure S1.tiff', format ='tiff', dpi=(300, 300))
     elif out_type == 'plot_figure':
         plt.show()
 
@@ -338,10 +355,9 @@ def plot_S2_fangi_frequency(fangji, values_200_pd, out_type):
                                                        'frequency'], keep='first')['frequency']
     values = list(dict(fangji.herb_pair_frequency_dict).values())
     figS2 = plt.figure(figsize=(8, 6))
-    sns.set_context("paper", font_scale=1.3)
+    sns.set(font='Arial', style="white",context= "paper", font_scale=1.2)
     gs = gridspec.GridSpec(2, 2)
     # top herb cor frequency
-    sns.set_style("white")
     f3_ax1 = figS2.add_subplot(gs[0:, 0:])
     plt.hist(values,
                   log=True,
@@ -384,6 +400,13 @@ def plot_S2_fangi_frequency(fangji, values_200_pd, out_type):
     if out_type == 'save_figure':
         plt.savefig('figure/Figure S2.pdf', format='pdf')
         plt.savefig('figure/Figure S2.png', dpi=300)
+        plt.savefig('figure/Figure S2.svg', dpi=300, format='svg')
+        # # Save the image in memory in PNG format
+
+        # Load this image into PIL
+        png2 = Image.open('figure/Figure S2.png')
+        # Save as TIFF
+        png2.save('figure/Figure S2.tiff', format='tiff', dpi=(300, 300))
     elif out_type == 'plot_figure':
         plt.show()
 
@@ -401,8 +424,7 @@ def plot_S3_ingredient_overlap( top_pd, random_pd, herb_obj: classmethod, out_ty
     #logger.info('the number of ingredients overlap {} between {}', overlap_count_top, over_list_dict_top)
     figS2 = plt.figure(figsize=(8, 8))
     gs = gridspec.GridSpec(2, 1)
-    sns.set_style("white")
-    sns.set_context("paper", font_scale=1.2)
+    sns.set(font='Arial', style="white",context= "paper", font_scale=1.2)
     # top herb cor frequency
     f3_ax1 = figS2.add_subplot(gs[0:1, :])
     top_dict = dict(Counter(list(over_list_dict_top.values())))
@@ -427,6 +449,10 @@ def plot_S3_ingredient_overlap( top_pd, random_pd, herb_obj: classmethod, out_ty
                         )
     plt.ylabel('Percentage %')
     plt.xlabel('')
+    f3_ax1.set_title('A', loc='left')
+
+
+    # sencond
     f3_ax2 = figS2.add_subplot(gs[1:, :])
     random_dict = dict(Counter(list(over_list_dict_random.values())))
     pd_data_r = pd.DataFrame.from_dict(random_dict, orient='index').reset_index()
@@ -440,13 +466,24 @@ def plot_S3_ingredient_overlap( top_pd, random_pd, herb_obj: classmethod, out_ty
     for p in f3_ax2.patches:
         f3_ax2.annotate(format(p.get_height(), '.2f'), (p.get_x() + p.get_width() / 2., p.get_height()), ha='center',
                        va='center', xytext=(0, 10), textcoords='offset points')
+    f3_ax2.set_title('B', loc='left')
     plt.ylabel('Percentage %')
     plt.xlabel('Number of common ingredients')
+
+
     if out_type == 'save_figure':
         plt.savefig('figure/Figure S3.png', dpi = 300)
         plt.savefig('figure/Figure S3.pdf', format='pdf')
+        plt.savefig('figure/Figure S3.svg', dpi=300, format='svg')
+        # # Save the image in memory in PNG format
+
+        # Load this image into PIL
+        png2 = Image.open('figure/Figure S3.png')
+        # Save as TIFF
+        png2.save('figure/Figure S3.tiff', format='tiff', dpi=(300, 300))
     elif out_type == 'plot_figure':
         plt.show()
+
 
 def plot_fig_3_old(mean_pd, out_type):
     mean_pd['distance_reduce'] = mean_pd['Distance for random herb pairs'] - mean_pd['Distance for top herb pairs']
@@ -455,6 +492,8 @@ def plot_fig_3_old(mean_pd, out_type):
 ], value_vars=['Distance for top herb pairs',	'Distance for random herb pairs'])
     mean_pd_melt = mean_pd_melt.rename(columns = {'value':'Distance', 'variable':'Source'})
     fig3 = plt.figure(figsize=(5, 5))
+    sns.set_style('whitegrid')
+    sns.set(font='Arial')
     sns.set_context("paper", font_scale=1)
     gs = gridspec.GridSpec(3, 3)
     ax_3 = fig3.add_subplot(gs[:, :])
@@ -481,28 +520,36 @@ def plot_figure_3(out_type):
     result.get_mean()
 
     pd_melt = result.pd_melt
-    pd_melt = pd_melt.rename(columns={'Herb-level distance type':'H',
-                                      'Ingredient-level distance type':'I',
+    pd_melt = pd_melt.rename(columns={'Herb-level distance type':'I',
+                                      'Ingredient-level distance type':'T',
                                       'class':'group'})
 
-    pd_melt = pd_melt.sort_values(by=['H','I'])
-    fig = plt.figure(figsize=(5, 5))
-    sns.set_context('paper', font_scale=1.3)
-    sns.set_style('whitegrid')
+    pd_melt = pd_melt.sort_values(by=['I','T'])
+    fig = plt.figure(figsize=(8, 8))
+
+    sns.set(font='Arial', style="whitegrid",context= "paper", font_scale=2.4)
     g = sns.FacetGrid(pd_melt,
-                      row='I',
-                      col= 'H',
+                      row='T',
+                      col= 'I',
                       margin_titles = True,
                       despine = False, gridspec_kws={"wspace":0.1, 'hspace':0.1})
     g.map_dataframe(sns.violinplot,
                       'group',
               "Distance",
               palette="Set2")
+    g.set_axis_labels("", "Distance")
     g.fig.subplots_adjust(wspace=0, hspace=0)
     plt.tight_layout()
     if out_type == 'save_figure':
         plt.savefig('figure/Figure 3.png', dpi = 300)
         plt.savefig('figure/Figure 3.pdf', format='pdf')
+        plt.savefig('figure/Figure 3.svg', dpi=300, format='svg')
+        # # Save the image in memory in PNG format
+
+        # Load this image into PIL
+        png2 = Image.open('figure/Figure 3.png')
+        # Save as TIFF
+        png2.save('figure/Figure 3.tiff', format='tiff', dpi=(300, 300))
     elif out_type == 'plot_figure':
         plt.show()
 
@@ -519,32 +566,42 @@ def plot_figure_5_permu():
     real_raw_data = result.prepare_raw_result()
     return real_raw_data
 
-def plot_new_figue_S4(out_type):
+def plot_S4_new_figure(out_type):
     filename_top =  'result/classic_distances_recommend.csv'
     filename_random = 'result/result_random_0_10000.csv'
     result = Result_distance(filename_top, filename_random)  # 47 time
     result.get_mean()
 
     pd_melt = result.pd_melt
-    pd_melt = pd_melt.rename(columns={'Herb-level distance type':'H','Ingredient-level distance type':'I','class':'group'})
-    pd_melt = pd_melt.sort_values(by=['H', 'I'])
+    pd_melt = pd_melt.rename(columns={'Herb-level distance type':'I',
+                                      'Ingredient-level distance type':'T',
+                                      'class':'group'})
+    pd_melt = pd_melt.sort_values(by=['I', 'T'])
     fig = plt.figure(figsize=(8, 8))
-    sns.set_context('paper', font_scale=2.4)
-    sns.set_style('whitegrid')
+    sns.set(font='Arial', style="whitegrid",context= "paper", font_scale=2.4)
     g = sns.FacetGrid(pd_melt,
-                      row='I',
-                      col= 'H',
+                      row='T',
+                      col= 'I',
                       margin_titles = True,
-                      despine = False, gridspec_kws={"wspace":0.1, 'hspace':0.1})
+                      despine = False,
+                      gridspec_kws={"wspace":0.1, 'hspace':0.1})
     g.map_dataframe(sns.violinplot,
                       'group',
               "Distance",
               palette="Set2", )
+    g.set_axis_labels("", "Distance")
     g.fig.subplots_adjust(wspace=0, hspace=0)
     plt.tight_layout()
     if out_type == 'save_figure':
         plt.savefig('figure/Figure S4.png', dpi = 300)
         plt.savefig('figure/Figure S4.pdf', format='pdf')
+        plt.savefig('figure/Figure S4.svg', dpi=300, format='svg')
+        # # Save the image in memory in PNG format
+
+        # Load this image into PIL
+        png2 = Image.open('figure/Figure S4.png')
+        # Save as TIFF
+        png2.save('figure/Figure S4.tiff', format='tiff', dpi=(300, 300))
     elif out_type == 'plot_figure':
         plt.show()
 
@@ -559,7 +616,9 @@ def plot_fig_S5_old( mean_pd, out_type):
                                 value_vars=['Distance for top herb pairs', 'Distance for random herb pairs'])
     mean_pd_melt = mean_pd_melt.rename(columns={'value': 'Distance', 'variable': 'Source'})
     fig3 = plt.figure(figsize=(5, 5))
+    sns.set_style('whitegrid')
     sns.set_context("paper", font_scale=1)
+    sns.set(font='Arial')
     gs = gridspec.GridSpec(3, 3)
     ax_3 = fig3.add_subplot(gs[:, :])
     sns.factorplot(x='Ingredient-level distance type',
@@ -582,13 +641,17 @@ def plot_fig_S5_old( mean_pd, out_type):
     elif out_type == 'plot_figure':
         plt.show()
 
-def plot_figure_4(filename_top, filename_random, herb_m, ingre_m, how):
+def plot_figure_4(filename_top, filename_random, herb_m_ingre_m_1,herb_m_ingre_m_2, how):
+
     result = Result_distance(filename_top, filename_random)
     result.distance_split()
     repeat = len(list(result.new_grouped_list['random'])[1]) - 1
-    fig = plt.figure(figsize=(10, 5))
-    sns.set_context('paper', font_scale=1.3)
-    ax = fig.add_subplot(1, 2, 1)
+    fig = plt.figure(figsize=(8,8))
+
+    sns.set(font='Arial', style="white",context= "paper", font_scale=1.2)
+
+    herb_m, ingre_m = herb_m_ingre_m_1[0], herb_m_ingre_m_1[1]
+    ax = fig.add_subplot(2, 2, 1)
     top = list(result.new_grouped_list.loc[(herb_m, ingre_m), 'top'])
     randoms = list(result.new_grouped_list.loc[(herb_m, ingre_m), 'random'])
     auc_list = []; fpr_list=[];tpr_list=[]
@@ -606,13 +669,12 @@ def plot_figure_4(filename_top, filename_random, herb_m, ingre_m, how):
     ax.legend(loc='lower right', fontsize='large', frameon=False)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-
+    ax.set_title('A', loc='left')
     ax.xaxis.set_tick_params(top='off', direction='out', width=1)
     ax.yaxis.set_tick_params(right='off', direction='out', width=1)
 
     # PRC
-    ax2 = fig.add_subplot(1, 2, 2)
-    ax2.set_ylabel('PRC')
+    ax2 = fig.add_subplot(2, 2, 2)
     ax2.set_alpha(.6)
     auc_list = []
     precision_list = []
@@ -633,16 +695,79 @@ def plot_figure_4(filename_top, filename_random, herb_m, ingre_m, how):
     ax2.legend(loc='lower left', fontsize='large', frameon=False)
     ax2.spines['top'].set_visible(False)
     ax2.spines['right'].set_visible(False)
-
+    ax2.set_title('B', loc='left')
     ax2.xaxis.set_tick_params(top='off', direction='out', width=1)
     ax2.yaxis.set_tick_params(right='off', direction='out', width=1)
-    plt.subplots_adjust(hspace=1.2, wspace=0.50)
-    plt.tight_layout()
+
+    # for another
+    herb_m, ingre_m = herb_m_ingre_m_2[0], herb_m_ingre_m_2[1]
+    ax3 = fig.add_subplot(2, 2, 3)
+    top = list(result.new_grouped_list.loc[(herb_m, ingre_m), 'top'])
+    randoms = list(result.new_grouped_list.loc[(herb_m, ingre_m), 'random'])
+    auc_list = []
+    fpr_list = []
+    tpr_list = []
+    for i, random_list in enumerate(randoms):
+        if i < repeat:
+            out = roc_cal(top, random_list)
+            fpr, tpr, roc_auc = out['fpr'], out['tpr'], out['roc']
+            fpr_list.append(fpr)
+            tpr_list.append(tpr)
+            auc_list.append(roc_auc)
+            ax3.plot(fpr, tpr, lw=2, alpha=0.3)
+
+    ax3.plot(np.mean(pd.DataFrame(fpr_list)), np.mean(pd.DataFrame(tpr_list)), '',
+            lw=2, alpha=0.8, color='blue',
+            label='AUROC = {:.3f}'.format(np.mean(auc_list)))
+
+    ax3.plot([0, 1], [0, 1], '--')
+    ax3.set_ylabel('True Positive Rate')
+    ax3.set_xlabel('False Positive Rate')
+    ax3.legend(loc='lower right', fontsize='large', frameon=False)
+    ax3.spines['top'].set_visible(False)
+    ax3.spines['right'].set_visible(False)
+    ax3.set_title('C', loc='left')
+    ax3.xaxis.set_tick_params(top='off', direction='out', width=1)
+    ax3.yaxis.set_tick_params(right='off', direction='out', width=1)
+
+    # PRC
+    ax4 = fig.add_subplot(2, 2, 4)
+    ax4.set_alpha(.6)
+    auc_list = []
+    precision_list = []
+    recall_list = []
+    for i, random_list in enumerate(randoms):
+        if i < repeat:
+            out = prc_cal(top, random_list)
+            precision, recall, prc_auc = out['precision'], out['recall'], out['roc']
+            precision_list.append(precision)
+            recall_list.append(recall)
+            auc_list.append(prc_auc)
+            ax4.plot(recall, precision, lw=2, alpha=0.3)
+    ax4.plot(np.mean(pd.DataFrame(recall_list)), np.mean(pd.DataFrame(precision_list)), '', lw=2, alpha=0.8,
+             color='blue',
+             label='AUPRC = {:.3f}'.format(np.mean(auc_list)))
+    ax4.set_ylabel('Precision')
+    ax4.set_xlabel('Recall')
+    ax4.legend(loc='lower left', fontsize='large', frameon=False)
+    ax4.spines['top'].set_visible(False)
+    ax4.spines['right'].set_visible(False)
+    ax4.set_title('D', loc='left')
+    ax4.xaxis.set_tick_params(top='off', direction='out', width=1)
+    ax4.yaxis.set_tick_params(right='off', direction='out', width=1)
+
 
     plt.subplots_adjust(hspace=1.2, wspace=0.50); plt.tight_layout()
     if how == 'save_figure':
         plt.savefig('figure/Figure 4.png')
         plt.savefig('figure/Figure 4.pdf', format = 'pdf')
+        plt.savefig('figure/Figure 4.svg', dpi=300, format='svg')
+        # # Save the image in memory in PNG format
+
+        # Load this image into PIL
+        png2 = Image.open('figure/Figure 4.png')
+        # Save as TIFF
+        png2.save('figure/Figure 4.tiff', format='tiff', dpi=(300, 300))
     elif how == 'plot_figure':
         plt.show()
 
@@ -652,6 +777,7 @@ def plot_figure_5(mean_pd, how):
                        'Ingredient-level distance type'], value_vars=['AUROC',
                        'AUPRC'])
     ax = plt.figure(figsize=(5, 5))
+    sns.set(font='Arial')
     sns.set_context('paper', font_scale=1)
     g = sns.barplot(x= 'Herb-level distance type',
                         y='value',
@@ -676,6 +802,7 @@ def plot_figure_S6(mean_pd, how):
     #mean_pd_melt = mean_pd.melt(id_vars=['Herb-level distance type',
                                          #'Ingredient-level distance type'], #value_vars=['AUROC'])
     ax = plt.figure(figsize=((5, 5)))
+    sns.set(font='Arial')
     sns.set_context('paper', font_scale=1)
     g = sns.barplot(x='Herb-level distance type',
                     y='AUROC',
@@ -690,7 +817,7 @@ def plot_figure_S6(mean_pd, how):
     plt.ylabel('AUROC')
     plt.xlabel('')
     if how == 'save_figure':
-        plt.savefig('figure/Figure S6.png')
+        plt.savefig('figure/Figure S6_pathway.png')
     elif how == 'plot_figure':
         plt.show()
 
@@ -700,7 +827,7 @@ def plot_figure_6(g_obj, ingredients_obj, how):
     ingre_target_network(ingre_1, ingre_2, g_obj, ingredients_obj, how)
 
 
-def plot_pathway(out_type):
+def plot_S6_pathway(out_type):
     pathways = pd.read_csv('result/pathways.csv')
     pathways['p_value_cal'] = pathways['P-value'].apply(lambda x:-np.log2(x))
     pathways['genes_list'] = pathways['Genes'].apply(lambda x:x.split(';'))
@@ -713,9 +840,8 @@ def plot_pathway(out_type):
     map_pd['con'] = 0
     map_pd_2 = map_pd.pivot_table('con', ['Pathways'], 'Gene')
     map_pd_2 = map_pd_2.fillna(1)
-    fig3 = plt.figure(figsize=(8, 5))
-    sns.set_context("paper", font_scale=1.2)
-    sns.set_style('white')
+    fig3 = plt.figure(figsize=(5, 5))
+    sns.set(font='Arial', style="white",context= "paper", font_scale=1.2)
     cmap = sns.diverging_palette(225, 2, as_cmap=True)
     sns.heatmap(map_pd_2,
                 linewidths=.5,
@@ -726,6 +852,13 @@ def plot_pathway(out_type):
     if out_type == 'save_figure':
         plt.savefig('figure/Figure S6_pathway.pdf', format='pdf')
         plt.savefig('figure/Figure S6_pathway.png', dpi=300)
+        plt.savefig('figure/Figure S6_pathway.svg', dpi=300, format='svg')
+        # # Save the image in memory in PNG format
+
+        # Load this image into PIL
+        png2 = Image.open('figure/Figure S6_pathway.pdf')
+        # Save as TIFF
+        png2.save('figure/Figure S6_pathway.tiff', format='tiff', dpi=(300, 300))
     elif out_type == 'plot_figure':
         plt.show()
 
@@ -738,6 +871,7 @@ def plot_box_diatance_top_no_overlap():
     mean_pd_no_over['source'] = 'top_no_overlap'
     mean_pd = pd.concat([mean_pd_top,mean_pd_no_over])
     ax = plt.figure()
+    sns.set(font='Arial')
     sns.set_context("paper")
     my_pal = {"top": "r", "top_no_overlap": "g"}
     g = sns.boxplot(x='herb_method',
@@ -749,15 +883,42 @@ def plot_box_diatance_top_no_overlap():
     g.set_ylabel('distance_mean_value')
     ax.savefig('figure/top_no_overlap_dis_mean.png')
 
+
+def save_other_figure_tiff(figure_name):
+    # Load this image into PIL
+    png2 = Image.open('figure/{}.png'.format(figure_name))
+    # Save as TIFF
+    png2.save('figure/{}.tiff'.format(figure_name), format='tiff', dpi=(300, 300))
+
+
 def main():
-    # plot_fig_3('plot_figure')
+    plot_figure_3('save_figure')
     # plot_figure_4('center', 'shortest', 'save_figure')
+    # plot_figure_4('result/top_200.csv',
+    #               'result/result_random_0_10000.csv',
+    #               ['center', 'separation'],
+    #               ['center', 'shortest'],
+    #               'save_figure')
     # plot_figure_5()
     # plot_figure_S6('save_figure')
-    # plot_figure_2(fangji, 10, 'save_figure')
+    # plot_figure_2(fangji, 10, 'plot_figure')
     # plot_S1_fangji_length(fangji,'save_figure')
-    # plot_S2_fangi_frequency(fangji, 'save_figure')
-    plot_figure_6(g_obj, ingredients_obj, 'save_figure')
+    # values_200_pd = pd.read_csv('result/Table S2.csv')
+    # plot_S2_fangi_frequency(fangji, values_200_pd, 'save_figure')
+
+    # random_pd = pd.read_csv('result/result_random_0_10000.csv')
+    # top_pd = pd.read_csv('result/top_200.csv')
+    # plot_S3_ingredient_overlap(top_pd, random_pd, herb_obj, 'save_figure')
+
+    plot_S4_new_figure('save_figure')
+
+    # plot_S6_pathway('save_figure')
+    # plot_figure_6(g_obj, ingredients_obj, 'save_figure')
+
+    ##
+
+    # save_other_figure_tiff('Figure 6')
+    # save_other_figure_tiff('Figure 2')
 
 
 #  overlap_distance_linear group by methods pairwise

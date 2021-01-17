@@ -10,7 +10,6 @@ def prepare_filter(bioassay_dict):
     data.replace('', pd.np.nan, inplace=True)
     data.fillna(value=pd.np.nan, inplace=True)
     data = data.dropna(subset=['uniprot_id', 'gene_name'], how='all')
-
     data = data[data['activity_comment'] != 'inactive']
     return data
 

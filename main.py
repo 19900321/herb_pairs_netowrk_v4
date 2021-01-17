@@ -18,17 +18,15 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
+# if __name__ == '__main__':
+#     # test.main()
+#
+#     # casestudy2.main()
+#     # figures_draw.main()
+#     # herb_herb_pairs.main()
+#     # permuation_herbs.main()
+#     # figures_draw.main()
+#     print('test')
+
 if __name__ == '__main__':
-    # test.main()
-
-    # casestudy2.main()
-    # figures_draw.main()
-    # herb_herb_pairs.main()
-    # permuation_herbs.main()
-    # figures_draw.main()
-    print('test')
-
-
-# test
-import pandas as pd
-import numpy as np
+    figures_draw.main()

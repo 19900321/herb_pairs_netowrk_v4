@@ -134,7 +134,6 @@ mean_no_overlap = mean_no_overlap.rename(columns={'Distance for top herb pairs':
 # merge means
 # read
 mean_200 = pd.read_csv('result/Table 1.csv')
-
 mean_200['Distance for top 10000 herb pairs'] = mean_10000['Distance for top 10000 herb pairs']
 mean_200['Distance for top no_overlap 114 herb pairs'] = mean_no_overlap['Distance for top no_overlap 114 herb pairs']
 cols_names = ['Herb-level distance type',
@@ -145,8 +144,7 @@ cols_names = ['Herb-level distance type',
               'Distance for random herb pairs',
               'p-value',
               'AUROC',
-              'AUPRC',
-       ]
+              'AUPRC']
 mean_200 = mean_200[cols_names]
 table_1 = mean_200
 table_1.to_csv('Table/Table 1.csv')
@@ -395,7 +393,7 @@ def numbers_in_paper():
     from figures_draw import herb_overlap_ingredient
     top_pd = top_pd.sort_values(by='frequency', ascending=False)
     pairs_top = list(set(list(zip(top_pd['herb1'],top_pd['herb2']))))
-    pairs_random = list(set(list(zip(random_pd['herb1'],random_pd['herb2']))))
+    pairs_random = list(set(list(zip(random_pd['herb1'], random_pd['herb2']))))
     overlap_count_top, over_list_dict_top = herb_overlap_ingredient(pairs_top, herb_obj)
     overlap_count_random, over_list_dict_random = herb_overlap_ingredient(pairs_random, herb_obj)
     n_0_common_ingre = overlap_count_top[0]

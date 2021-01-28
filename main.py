@@ -5,6 +5,7 @@ from example import casestudy2
 import figures_draw
 import herb_herb_pairs
 import permuation_herbs
+from example import covid19
 
 logger = logging.getLogger()
 if platform.node() == 'calculon':
@@ -18,15 +19,14 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
-# if __name__ == '__main__':
-#     # test.main()
-#
-#     # casestudy2.main()
-#     # figures_draw.main()
-#     # herb_herb_pairs.main()
-#     # permuation_herbs.main()
-#     # figures_draw.main()
-#     print('test')
-
 if __name__ == '__main__':
-    figures_draw.main()
+    # test.main()
+
+    # casestudy2.main()
+    # figures_draw.main()
+    # herb_herb_pairs.main()
+    # permuation_herbs.main()
+    # figures_draw.main()
+    covid19.main()
+
+

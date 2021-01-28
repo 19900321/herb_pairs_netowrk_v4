@@ -12,6 +12,7 @@ from process.drug_annotation_pipline import get_symble_from_entries
 g_obj.get_degree_binning(1001)
 from herb_ingre_tar import annotaion_herbs_from_mqsql, annotaion_ingredients_from_mqsql
 
+
 # use herb:center, ingre:closest as final distance, 6.25
 class Herb_Pair_network:
     def __init__(self, herb_distance_obj, herb_from_name, herb_to_name, ingre_method, herb_method, herb_info):
@@ -80,8 +81,7 @@ class Herb_Pair_network:
 
     def get_disease_herb_ingre_z(self, disease_obj, disease, herb, distance_method, herb_ingre_dict, ingre_tar_dict,
                                  random_time, seed):
-        ingre_disease_dict = disease_obj.cal_disease_herb_ingre_z_score(self, disease, herb, distance_method,
-                                                                        herb_ingre_dict, ingre_tar_dict,
+        ingre_disease_dict = disease_obj.cal_disease_herb_ingre_z_score(disease, herb, distance_method, herb_ingre_dict, ingre_tar_dict,
                                                                         random_time, seed)
         ingre_disease_pd = pd.DataFrame.from_dict(ingre_disease_dict, orient='index',
                                                   columns=['d', 'z', 'm', 's', 'p_val'])

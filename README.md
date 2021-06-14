@@ -9,13 +9,16 @@ For instance, for a given file path with PPI edgelist pairs e.g. example/toy.sif
 # 2 proximity_key.py: 
 contains the key script that generates five different network distances, such as center, separation, closest, shortest and kernel.
 
-# 3 herb_ingre_tar: 
+# 3 herb_ingre_tar.py: 
 the object named ‘Ingredients’ contains ingredient-related information, especially ingredient-target relationship. The object ‘Herb’ wraps herb-related information, especially ingredient pairs.
 
 # 4 herb_distance_generation.py: 
 calculate the herb-herb network distance by herb_herb_dis(self, herb_from, herb_to, distance_method, distance_method_herb_list) and herb_herb_dis_all(self, herb_from, herb_to) for all the distance. 
 
-# 5 generate_objects.py: 
+# 5 herb_herb_pairs.py:
+contain herb informtaion and TCM formulae information
+
+# 6 generate_objects.py: 
 generate key objects that will be used in the methods.
 
-# 6 The example folder contains two examples.
+# 7 The example folder contains two examples.

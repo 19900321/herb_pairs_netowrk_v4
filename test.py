@@ -16,9 +16,6 @@ def test_herb_ingre(herb_distance_obj, g_obj):
 
 def main():
     test_figure_obj = test_figure(fangji, herb_obj, herb_info)
-    #test_figure_obj.test_herb_cor()
-    # test_figure_obj.test_figure2()
-    # test_figure_obj.test_fangji_length()
     test_figure_obj.test_herb_ingredient()
 
 

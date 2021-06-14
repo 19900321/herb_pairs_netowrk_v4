@@ -1,6 +1,6 @@
-from figures_draw import *
 
-from generate_objects import herb_obj, herb_info, fangji
+
+from generate_objects import herb_obj, herb_info, fangjig_obj, ingredients_obj, herb_distance_obj, fangji, g_obj
 
 
 
@@ -15,8 +15,7 @@ def test_herb_ingre(herb_distance_obj, g_obj):
 
 
 def main():
-    test_figure_obj = test_figure(fangji, herb_obj, herb_info)
-    test_figure_obj.test_herb_ingredient()
+    test_herb_ingre(herb_distance_obj, g_obj)
 
 
 

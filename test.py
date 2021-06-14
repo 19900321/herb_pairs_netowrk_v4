@@ -2,29 +2,6 @@ from figures_draw import *
 
 from generate_objects import herb_obj, herb_info, fangji
 
-class test_figure:
-    def __init__(self, fangji, herb_obj, herb_info):
-        self.fangji = fangji
-        self.herb_obj = herb_obj
-        self.herb_info = herb_info
-
-
-    def test_herb_cor(self):
-        plot_cor_top_herb(self.fangji, 10, 'plot_figure')
-
-    def test_figure2(self):
-        plot_figure_2(self.fangji, 10, 'save_figure')
-
-    def test_fangji_length(self):
-        plot_fangji_length(self.fangji, 'save_figure')
-
-    def test_herb_ingredient(self):
-        plot_ingredient_overlap(self.herb_obj,
-                                self.fangji,
-                                self.herb_info,
-                                200, 'top',
-                                'save_figure' )
-
 
 
 #test the functions

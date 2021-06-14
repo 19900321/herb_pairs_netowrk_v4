@@ -25,48 +25,6 @@ def qc_herb(data):
     return herb_ingre_dict3
 
 
-
-# map the ingreidnets out
-def annotaion_ingredients_from_mqsql():
-    # connect mysql
-    db_2 = MySQLdb.connect(host="127.0.0.1", user="yin", passwd="Mqxs320321wyy", db="tcm_infor",
-                           cursorclass=MySQLdb.cursors.DictCursor,
-                           charset="utf8")
-    c = db_2.cursor()
-
-    # decide the search code in mysql. It depend on the search key word we use. one of ['smiles', 'inchikey']
-
-    sql = """
-           select * from ingreidnet_annotation
-           """
-    # perform query in mysql, and return the dataframe result
-    c.execute(sql)
-    inchey_used_2 = c.fetchall()
-    pd_result = pd.DataFrame(list(inchey_used_2))
-    print(pd_result.shape)
-    return pd_result
-
-
-def annotaion_herbs_from_mqsql():
-    # connect mysql
-    db_2 = MySQLdb.connect(host="127.0.0.1", user="yin", passwd="Mqxs320321wyy", db="tcm_infor",
-                           cursorclass=MySQLdb.cursors.DictCursor,
-                           charset="utf8")
-    c = db_2.cursor()
-
-    # decide the search code in mysql. It depend on the search key word we use. one of ['smiles', 'inchikey']
-
-    sql = """
-           select * from herb_information
-           """
-    # perform query in mysql, and return the dataframe result
-    c.execute(sql)
-    inchey_used_2 = c.fetchall()
-    pd_result_herb = pd.DataFrame(list(inchey_used_2))
-    return pd_result_herb
-
-
-
 class Ingredients:
     def __init__(self, filename, score):
         self.filename = filename
